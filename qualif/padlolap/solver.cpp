@@ -18,12 +18,12 @@
 // 100000 - 7071047101
 // 1000000 - 707106574080
 
-// KOD: 
+// KOD:
 
 //    FL num = 1;
 //    FL res = 1;
 //    const FL sq2 = mp::sqrt(FL(2));
-    
+
 //    std::cout << std::setprecision(1000000) << std::endl;
 //    for(FL i = 1; i <= 1000000; ++i) {
 //        if(i == num) {
@@ -35,14 +35,15 @@
 
 // látszik hogy konvergál egy jó kis számhoz (1/sqrt(2))
 // wolframalphás ugykodessel rajottem, hogy (n db 9-es + 1/sqrt(2) n db szamjegye) osztva sqrt(2) -vel szuperul visszaadja a cuccoskat
-// persze szep kis precizitasi problemak talan lehetnek 
+// persze szep kis precizitasi problemak talan lehetnek
 // jobb lenne egy cpp_int-et hasznalni, de akkor meg a /sq2-s osztogatasok cseszodhetnek el.
 
+//  +/- 1 miatt ... szoval meg a kovi elem is kell:
 int main(int argc, char** argv) {
     namespace mp = boost::multiprecision;
     using FL = mp::number<mp::cpp_dec_float<14350>>; // meh.
     const int numPow = boost::lexical_cast<int>(argc == 2 ? argv[1] : "6");
     const FL num = boost::lexical_cast<FL>("1" + std::string(numPow, '0')); // ez se a legszebb, de a mp::pow lassu floatokra
     const FL sq2 = mp::sqrt(FL(2));
-    std::cout << std::setprecision(INT_MAX) << mp::round(((num-1)*num + mp::round(num/sq2)) / sq2) << std::endl;
+    std::cout << std::setprecision(INT_MAX) << mp::round(((num-1)*num + mp::round(num/sq2)) / sq2) + mp::ceil(num*sq2) << std::endl;
 }
