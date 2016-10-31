@@ -26,8 +26,8 @@ using PQueueTree = std::priority_queue<std::shared_ptr<Tree>, std::vector<std::s
         CompareTreesByDepth>;
 
 struct Word : std::string {
-    PQueueTree prefixEnds = PQueueTree(compareTreesByDepth);
-    PQueueTree suffixEnds = PQueueTree(compareTreesByDepth);
+    std::vector<std::shared_ptr<Tree>> prefixEnds;
+    std::vector<std::shared_ptr<Tree>> suffixEnds;
     Word(const std::string& str) : std::string(str) {}
     std::shared_ptr<Chain> in;
 };
@@ -72,6 +72,8 @@ public:
     }
 };
 
+
+
 class Tree : public std::enable_shared_from_this<Tree> {
     Tree* parent = nullptr;
     int depth = 0;
@@ -85,16 +87,17 @@ class Tree : public std::enable_shared_from_this<Tree> {
             getChild(*word).makeSuffix(word + 1, ptr);
         } else {
             suffix.push_back(ptr);
-            ptr->suffixEnds.push(shared_from_this());
+            ptr->suffixEnds.push_back(shared_from_this());
         }
     }
 
     void makePrefix(const char* word, Word* ptr) {
         if(*word) {
-            prefix.push_back(ptr);
-            ptr->prefixEnds.push(shared_from_this());
             getChild(*word).makePrefix(word + 1, ptr);
         }
+        
+        prefix.push_back(ptr);
+        ptr->prefixEnds.push_back(shared_from_this());
     }
 public:
     Tree() = default;
@@ -148,17 +151,26 @@ int main() {
     std::ifstream input("words_final.txt");
 
     // beolvassuk a szavakat...
+    std::cout << "Reading words..." << std::endl;
     std::vector<Word> words{IIT(input), IIT()};
+
+    std::cout << "Sorting words..." << std::endl;
+    std::sort(words.begin(), words.end(), [](auto& w1, auto& w2) {
+        if(w1.size() == w2.size()) return w1 < w2;
+        return w1.size() < w2.size();
+    });
 
     // csinálunk belőle egy prefix/suffix tree-t
     std::shared_ptr<Tree> tree = std::make_shared<Tree>();
 
+    std::cout << "Making the tree..." << std::endl;
     for(Word& word : words) {
         tree->insert(word);
     }
 
     // priózzuk a tree node-jait a hosszuk szerint
     // az elkképzelés az, hogy először a hosszabb elemeket párosítsuk mohón.
+    std::cout << "Collecting the nodes..." << std::endl;
     PQueueTree trees(compareTreesByDepth);
 
     { // itt szedjük ki a gráfból
@@ -177,6 +189,8 @@ int main() {
     }
 
     // végigmegyünk a node-okon
+
+    std::cout << "Finding prefix-suffix matches..." << std::endl;
     while(!trees.empty()) {
         auto treePtr = trees.top();
         trees.pop();
@@ -184,17 +198,14 @@ int main() {
         // kivesszük a prefix / suffix szavakat
         auto prefixWords = treePtr->getPrefixes();
         auto suffixWords = treePtr->getSuffixes();
-        std::shuffle(prefixWords.begin(), prefixWords.end(), std::random_device{});
-        std::shuffle(suffixWords.begin(), suffixWords.end(), std::random_device{});
-
+        
         if(prefixWords.size() && suffixWords.size()) {
             // valami alapján párosítsuk őket.
             // index szerint?? :D
 
             for(auto it = prefixWords.begin(); it != prefixWords.end(); ++it) {
                 Word* prefixWord = *it;
-                // fordítva indítva 8000-el jobb. WTF?
-                for(auto it = suffixWords.rbegin(); it != suffixWords.rend(); ++it) {
+                for(auto it = suffixWords.begin(); it != suffixWords.end(); ++it) {
                     Word* suffixWord = *it;
                     if(!prefixWord->in || !suffixWord->in || (prefixWord->in != suffixWord->in &&
                             Chain::isRealPrefix(prefixWord) && Chain::isRealSuffix(suffixWord))) {
@@ -209,18 +220,31 @@ int main() {
     // kiiratjuk a láncokat.
     std::set<std::shared_ptr<Chain>> usedChains;
     std::ofstream output("out.txt");
+    std::cout << "Writing output..." << std::endl;
+    
+    std::size_t min_chain = 1000000;
+    std::size_t max_chain = 0;
+    int no_chained = 0;
     for(Word& w : words) {
         // ha van, de még nem volt, akkor az egész láncot
         if(w.in && !usedChains.count(w.in)) {
-            std::cout << "Chain with length: " << w.in->getWords().size() << std::endl;
+            if(w.in->getWords().size() == 1) {
+                ++no_chained;
+            } else {
+                max_chain = std::max(max_chain, w.in->getWords().size());
+                min_chain = std::min(min_chain, w.in->getWords().size());
+            }
+            
             usedChains.insert(w.in);
             for(Word* w : w.in->getWords()) {
                 output << *w << std::endl;
             }
         } else if(!w.in) { // ha nincs láncban, akkor csak magát.
-            std::cout << "No chain :(" << std::endl;
+            ++no_chained;
             output << w << std::endl;
         }
     }
-
+    std::cout << "Used chain: " << usedChains.size() << " max: " << max_chain << " min: " << min_chain << std::endl;
+    std::cout << "Not in chain: " << no_chained << std::endl;
+    
 }
