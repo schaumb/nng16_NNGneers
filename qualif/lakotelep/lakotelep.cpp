@@ -79,7 +79,19 @@ bool CheckSolution(const std::vector< std::pair<std::size_t, std::size_t> >& sol
 	attempt[0].resize(original[0].size());
 	if (BuildSolution(solution, attempt))
 	{
-		return original == attempt;
+		bool result =  original == attempt;
+		
+		if(!result) {
+		    std::cout << "Generated: " << std::endl;
+			for (auto row : attempt)
+		    {
+			    for (auto cell : row)
+				    std::cout << cell;
+			    std::cout << std::endl;
+		    }
+		}
+		
+		return result;
 	}
 	return false;
 }
@@ -103,10 +115,10 @@ int main()
 	std::vector< std::pair<std::size_t, std::size_t> > orig_plan;
 	std::size_t OK_count = 0;
 	std::size_t FAIL_count = 0;
-	for (std::size_t testcount = 0; testcount < 1000; ++testcount)
+	for (std::size_t testcount = 0; testcount < 40; ++testcount)
 	{
-		std::size_t h = /*generator() % 99 + 1*/4;
-		std::size_t w = /*generator() % 99 + 1*/4;
+		std::size_t h = /*generator() % 99 + 1*/70;
+		std::size_t w = /*generator() % 99 + 1*/70;
 		orig_plan.resize(0);
 		orig_plan.reserve(h*w);
 		test.resize(h);
