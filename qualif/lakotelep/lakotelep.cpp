@@ -8,19 +8,19 @@
 #include <random>
 #include <cassert>
 
-bool BuildSolution(const std::vector< std::pair<size_t, size_t> >& solution, std::vector< std::vector<int> >& output)
+bool BuildSolution(const std::vector< std::pair<std::size_t, std::size_t> >& solution, std::vector< std::vector<int> >& output)
 {
-	const size_t H = output.size();
-	const size_t W = output[0].size();
+	const std::size_t H = output.size();
+	const std::size_t W = output[0].size();
 	if (solution.size() < H*W)
 		return false;
 	std::vector< std::vector<int> > tmp;
 	tmp.resize(H);
-	for (size_t i = 0; i < H; ++i)
+	for (std::size_t i = 0; i < H; ++i)
 	{
 		tmp[i].resize(W);
 	}
-	for (std::pair<size_t, size_t> it : solution)
+	for (std::pair<std::size_t, std::size_t> it : solution)
 	{
 		if (it.first >= H)
 			return false;
@@ -72,7 +72,7 @@ bool BuildSolution(const std::vector< std::pair<size_t, size_t> >& solution, std
 	return true;
 }
 
-bool CheckSolution(const std::vector< std::pair<size_t, size_t> >& solution, const std::vector< std::vector<int> >& original)
+bool CheckSolution(const std::vector< std::pair<std::size_t, std::size_t> >& solution, const std::vector< std::vector<int> >& original)
 {
 	std::vector< std::vector<int> > attempt;
 	attempt.resize(original.size());
@@ -95,25 +95,25 @@ int main()
 	test[1][0] = 3;
 	test[1][1] = 2;
 	test[0][1] = 1;
-	std::vector< std::pair<size_t, size_t> > solution;
+	std::vector< std::pair<std::size_t, std::size_t> > solution;
 	CalculateBuildOrder(test, solution);
 	bool succ = CheckSolution(solution, test);
 	std::cout << "handmade test 0 " << (succ?"success":"failed") << std::endl;
 	std::mt19937 generator(1337);
-	std::vector< std::pair<size_t, size_t> > orig_plan;
-	size_t OK_count = 0;
-	size_t FAIL_count = 0;
-	for (size_t testcount = 0; testcount < 1000; ++testcount)
+	std::vector< std::pair<std::size_t, std::size_t> > orig_plan;
+	std::size_t OK_count = 0;
+	std::size_t FAIL_count = 0;
+	for (std::size_t testcount = 0; testcount < 1000; ++testcount)
 	{
-		size_t h = /*generator() % 99 + 1*/4;
-		size_t w = /*generator() % 99 + 1*/4;
+		std::size_t h = /*generator() % 99 + 1*/4;
+		std::size_t w = /*generator() % 99 + 1*/4;
 		orig_plan.resize(0);
 		orig_plan.reserve(h*w);
 		test.resize(h);
 		test[0].resize(w);
-		for (size_t i = 0; i < h; ++i)
+		for (std::size_t i = 0; i < h; ++i)
 		{
-			for (size_t j = 0; j < w; ++j)
+			for (std::size_t j = 0; j < w; ++j)
 			{
 				orig_plan.push_back(std::make_pair(i, j));
 			}
