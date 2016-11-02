@@ -89,6 +89,12 @@ bool CheckSolution(const std::vector< std::pair<std::size_t, std::size_t> >& sol
 				    std::cout << cell;
 			    std::cout << std::endl;
 		    }
+		    
+		    std::size_t line = std::mismatch(original.begin(), original.end(), attempt.begin()).first - original.begin();
+		    std::size_t row = std::mismatch(original[line].begin(), original[line].end(), attempt[line].begin()).first - original[line].begin();
+		    
+		    std::cout << "first mismatch: " << line << " " << row << std::endl;
+		    std::cout << "orig: " << original[line][row] << " sol: " << attempt[line][row] << std::endl;
 		}
 		
 		return result;

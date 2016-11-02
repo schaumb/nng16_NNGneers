@@ -16,6 +16,13 @@ void printState();
 
 using Coord = std::pair<std::size_t, std::size_t>;
 
+struct NullIterator : public std::iterator<std::output_iterator_tag, const Coord> {
+    inline NullIterator& operator=(const Coord&) { return *this; }
+    inline NullIterator& operator*() { return *this; }
+    inline NullIterator& operator++() { return *this; }
+    inline NullIterator& operator++(int) { return *this; }
+};
+
 class Node {
     friend void printState();
 
@@ -136,7 +143,7 @@ public:
 
             if(!node.checkAndAddEdges(changed)) return false;
         }
-        return true;
+        return topOrder(NullIterator{});
     }
     
     static bool tryEdges() {
@@ -206,35 +213,43 @@ public:
         return &nodes[i * maxNode.second + j];
     }
     
+    template<class Iterator>
     struct Lambda {
-        std::vector<Coord>& order;
+        Iterator to;
         std::unordered_set<const Node*> used;
+        std::unordered_set<const Node*> visiting;
+        bool circle;
         
-        Lambda(std::vector<Coord>& order) : order(order) {}
+        Lambda(Iterator to) : to(to), circle{false} {}
         
         inline void visit(const Node* node) {
+            if(circle) return;
             if(!used.count(node)) {
                 used.insert(node);
+                visiting.insert(node);
                 for(int i = 0; i < 4; ++i) {
                     if(node->neighbours[i] == State::BEFORE) {
                         visit(node->getNeighbour(static_cast<Direction>(i)));
+                        if(circle) return;
                     }
                 }
+                visiting.erase(node);
 
-                order.push_back(node->coord);
+                *to++ = node->coord;
+            } else if (visiting.count(node)) {
+                circle = true;
             }
         }
     };
 
-    static void topOrder(std::vector<Coord>& order) {
-        order.clear();
-        order.reserve(Node::nodes.size());
-
-        Lambda lambda(order);
+    template<class Iterator>
+    static bool topOrder(Iterator it) {
+        Lambda<Iterator> lambda(it);
         
         for(Node& n : nodes) {
             lambda.visit(&n);
         }
+        return !lambda.circle;
     }
 
     inline void setUnknownsToAndGetNodes(bool isBefore, std::deque<Node*>& nexts) {
@@ -352,8 +367,11 @@ void CalculateBuildOrder(const std::vector< std::vector<int> >& buildings,
     Node::tryEdges();
     
     
-    Node::topOrder(solution);
+    solution.clear();
+    solution.reserve(Node::nodes.size());
+    Node::topOrder(std::back_inserter(solution));
     std::cout << "DONE" << std::endl;
     printState();
+    
 }
 
