@@ -144,7 +144,7 @@ public:
         findEdgesD(changed);
     }
     static bool findEdgesD(std::deque<Node*> changed) {
-        std::set<Node*> visitedNodes;
+        std::unordered_set<Node*> visitedNodes;
         while(!changed.empty()) {
             Node& node = *changed.back();
             changed.pop_back();
@@ -260,11 +260,11 @@ public:
                                             if(!result2) {
                                                 //std::cout << pair.first->coord.first << ", " << pair.first->coord.second << std::endl;
                                             }
-                                            assert(result2);
+                                            //assert(result2);
                                             
                                             commit();
                                         } else {
-                                            assert(done());
+                                            //assert(done());
                                             backLocal();
                                             commit();
                                             return true;
@@ -332,7 +332,7 @@ public:
         //std::cout << used.size() << " USED " << unknownFields.size() << std::endl;
         
         used.clear();
-        
+        /*
         #pragma omp parallel for
         for(std::size_t i = 0; i < unknownFields.size(); ++i) {
             std::vector<Node> cp = nodes; // kell egy local változat :(
@@ -351,26 +351,38 @@ public:
                 *get(pair.second.coord) = pair.second;
             }
         }
-        /*
+        */
+        //*
         std::vector<std::thread> threadPool;
         threadPool.reserve(unknownFields.size());
-        for(auto& map : unknownFields) {
-            threadPool.emplace_back(
-            [&map]() {
-                std::unordered_map<Node*, Node> localSave;
-                bool b = Tryer(map, localSave).run();
-                if(!b) {
-                    printState();
-                    assert(b && "Nem muxik");
+        for(auto it = unknownFields.begin(); it != unknownFields.end(); ++it) {
+            auto lambda = [&map = *it] () {
+                std::vector<Node> cp = nodes; // kell egy local változat :(
+                std::unordered_map<Node*, Node> localUnknownFields;
+                for(auto& pair : map) {
+                    localUnknownFields.emplace(&cp[pair.first->getIndex()], pair.second);
                 }
+                std::unordered_map<Node*, Node> localSave;
+                Tryer(localUnknownFields, localSave).run();
+                
+                map = localUnknownFields;
+            };
+            if(it == --unknownFields.end()) {
+                lambda();
+            } else {
+                threadPool.emplace_back(lambda);
             }
-            //(
-            );
         };
         for(auto& th : threadPool) {
             th.join();
         }
-        */
+        for(auto& map : unknownFields) {
+            for(auto& pair : map) {
+                // pair.first is invalid!!!
+                *get(pair.second.coord) = pair.second;
+            }
+        }
+        //*/
         /*
         Node* firstUN = nullptr;
         for(Node& n : nodes) {
