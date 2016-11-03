@@ -144,13 +144,21 @@ public:
         findEdgesD(changed);
     }
     static bool findEdgesD(std::deque<Node*> changed) {
+        std::set<Node*> visitedNodes;
         while(!changed.empty()) {
             Node& node = *changed.back();
             changed.pop_back();
+            visitedNodes.insert(&node);
 
             if(!node.checkAndAddEdges(changed)) return false;
         }
-        return topOrder(NullIterator{});
+        
+        Lambda<NullIterator> lambda(NullIterator{});
+        
+        for(Node* n : visitedNodes) {
+            lambda.visit(n);
+        }
+        return !lambda.circle;
     }
     
     struct Tryer {
@@ -249,6 +257,9 @@ public:
                                             // result 2
                                             pair.first->setEdge(winner, true);
                                             result2 = findEdgesD({pair.first->getNeighbour(winner), pair.first});
+                                            if(!result2) {
+                                                //std::cout << pair.first->coord.first << ", " << pair.first->coord.second << std::endl;
+                                            }
                                             assert(result2);
                                             
                                             commit();
@@ -322,19 +333,44 @@ public:
         
         used.clear();
         
-        
-        //#pragma omp parallel for
+        #pragma omp parallel for
+        for(std::size_t i = 0; i < unknownFields.size(); ++i) {
+            std::vector<Node> cp = nodes; // kell egy local változat :(
+            std::unordered_map<Node*, Node> localUnknownFields;
+            for(auto& pair : unknownFields[i]) {
+                localUnknownFields.emplace(&cp[pair.first->getIndex()], pair.second);
+            }
+            std::unordered_map<Node*, Node> localSave;
+            assert(Tryer(localUnknownFields, localSave).run());
+            
+            unknownFields[i] = localUnknownFields;
+        }
+        for(auto& map : unknownFields) {
+            for(auto& pair : map) {
+                // pair.first is invalid!!!
+                *get(pair.second.coord) = pair.second;
+            }
+        }
+        /*
         std::vector<std::thread> threadPool;
         threadPool.reserve(unknownFields.size());
         for(auto& map : unknownFields) {
-            threadPool.emplace_back([&map]() {
+            threadPool.emplace_back(
+            [&map]() {
                 std::unordered_map<Node*, Node> localSave;
-                Tryer(map, localSave).run();
-            });
+                bool b = Tryer(map, localSave).run();
+                if(!b) {
+                    printState();
+                    assert(b && "Nem muxik");
+                }
+            }
+            //(
+            );
         };
         for(auto& th : threadPool) {
             th.join();
         }
+        */
         /*
         Node* firstUN = nullptr;
         for(Node& n : nodes) {
@@ -563,7 +599,7 @@ void CalculateBuildOrder(const std::vector< std::vector<int> >& buildings,
     //t1.join();
     //t2.join();
     //t3.join();
-    
+    //printState();
     Node::tryEdges();
     
     
