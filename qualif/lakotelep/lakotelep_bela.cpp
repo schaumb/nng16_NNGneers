@@ -8,8 +8,10 @@
 #include <vector>
 #include <iostream>
 #include <unordered_set>
+#include <unordered_map>
 #include <deque>
 #include <mutex>
+#include <set>
 
 void printState();
 
@@ -88,6 +90,10 @@ class Node {
         return std::count(neighbours.begin(), neighbours.end(), countOfThisState);
     }
 
+    inline std::size_t getIndex() const {
+        return this - &nodes[0];
+    }
+    
 public:
     static std::array<int, 4> directionSlider;
     static Coord maxNode;
@@ -121,6 +127,7 @@ public:
     
     Node& operator=(const Node& oth) {
         neighbours = oth.neighbours;
+        return *this;
     }
 
     static void findEdges(Coord start, Coord end) {
@@ -146,11 +153,193 @@ public:
         return topOrder(NullIterator{});
     }
     
-    static bool tryEdges() {
+    struct Tryer {
+        std::unordered_map<Node*, Node>& origNodes;
+        std::unordered_map<Node*, Node>& localSave;
+        
+        Tryer(std::unordered_map<Node*, Node>& origNodes, 
+            std::unordered_map<Node*, Node>& localSave) : origNodes(origNodes), localSave(localSave) {}
+        
+        void back() {
+            for(auto& pair : origNodes) {
+                *pair.first = pair.second;
+            }
+        }
+        
+        void saveLocal() {
+            for(auto& pair : origNodes) {
+                auto p = localSave.emplace(pair.first, *pair.first);
+                if(!p.second) {
+                    p.first->second = *pair.first;
+                }
+            }
+        }
+  
+        void backLocal() {
+            for(auto& pair : localSave) {
+                *pair.first = pair.second;
+            }
+        }
+        
+        void commit() {
+            for(auto& pair : origNodes) {
+                pair.second = *pair.first;
+            }
+        }
+        
+        bool done() {
+            for(auto& pair : origNodes) {
+                if(pair.first->has(State::UNKNOWN)) {
+                    return false;
+                }
+            }
+            return true;
+        }
+        
+        bool run() {
+            while(!done()) {
+                bool wasChange = false;
+                for(auto& pair : origNodes) {
+                    if(pair.first->has(State::UNKNOWN)) {
+                        for(int i = 0; i < 4; ++i) {
+                            if(pair.first->neighbours[i] == State::UNKNOWN) {
+                                Direction winner = static_cast<Direction>(i);
+                                
+                                pair.first->setEdge(winner, false);
+                                bool result1 = findEdgesD({pair.first->getNeighbour(winner), pair.first});
+                                
+                                if(result1 && done()) {
+                                    //std::cout << "ITT - commit1" << std::endl;
+                                    commit();
+                                    wasChange = true;
+                                    return true;
+                                }
+                                
+                                if(result1) { 
+                                    saveLocal();
+                                }
+                                back();
+                                
+                                pair.first->setEdge(winner, true);
+                                bool result2 = findEdgesD({pair.first->getNeighbour(winner), pair.first});
+                                
+                                if(result2 && done()) {
+                                    //printState();
+                                    //std::cout << "ITT - commit2" << std::endl;
+                                    commit();
+                                    wasChange = true;
+                                    return true;
+                                }
+                                
+                                if(result1 && result2) { // local -> r1, pointers-> r2, orig -> orig;
+                                    //std::cout << "Double result" << std::endl;
+                                    //back();
+                                
+                                    if(true || (pair.first->buildings == 1 && pair.first->countOf(State::UNKNOWN) == 4)) {
+                                        //std::cout << "USe shortRec" << std::endl;
+                                        // orig-ot nem láthatja!
+                                        backLocal(); // pointers -> r1
+                                        // rekurzívan meghívjuk magunk. 
+                                        
+                                        std::unordered_map<Node*, Node> newLocalSave;
+                                        bool result = Tryer(localSave, newLocalSave).run();
+                                        if(!result) { // baki :( result 2 lenne jó
+                                            back();
+                                            //std::cout << "Second one is the winner" << std::endl;
+                                            // result 2
+                                            pair.first->setEdge(winner, true);
+                                            result2 = findEdgesD({pair.first->getNeighbour(winner), pair.first});
+                                            assert(result2);
+                                            
+                                            commit();
+                                        } else {
+                                            assert(done());
+                                            backLocal();
+                                            commit();
+                                            return true;
+                                        }
+                                    } else {
+                                        back();
+                                    }
+                                    continue;
+                                } 
+                                if(result1) {
+                                    //std::cout << "Use 1" << std::endl;
+                                    // 1 ok, 2 nok
+                                    backLocal();
+                                }
+                                if(result2) {
+                                    //std::cout << "Use 2" << std::endl;
+                                    // 2 ok, 1 nok
+                                    // do nothing
+                                }
+                                if(!(result1 || result2)) {
+                                    //assert(result1 || result2);
+                                    //std::cout << "ERR -> fallback" << std::endl;
+                                    //std::cerr << "ASSERT FIL results are false" << (result1 || result2) << std::endl;
+                                    return false;
+                                }
+                                wasChange = true;
+                                commit();
+                                //std::cout << "COMMITED" << std::endl;
+                                //printState();
+                            }
+                        }
+                    }
+                }
+                if(!wasChange) {
+                    //std::cout <<  "Sucks..." << std::endl;
+                    //printState();
+                }
+            } // end while
+            return true;
+        }
+    };
+    
+    static void tryEdges() {
+        std::unordered_set<Node*> used;
+        std::vector<std::unordered_map<Node*, Node>> unknownFields;
+        
+        for(Node& n : nodes) {
+            if(!used.count(&n)) {
+                if(n.has(State::UNKNOWN)) {
+                    std::set<Coord> fields;
+                    
+                    Lambda<decltype(std::inserter(fields, fields.end())), State::UNKNOWN, true> l(std::inserter(fields, fields.end()));
+                    
+                    l.visit(&n);
+                    
+                    unknownFields.push_back({});
+                    for(Coord c : fields) {
+                        Node* n2 = get(c);
+                        unknownFields.back().emplace(n2, *n2);
+                        used.insert(n2);
+                    }
+                }
+            }
+        }
+        //std::cout << used.size() << " USED " << unknownFields.size() << std::endl;
+        
+        used.clear();
+        
+        
+        //#pragma omp parallel for
+        std::vector<std::thread> threadPool;
+        threadPool.reserve(unknownFields.size());
+        for(auto& map : unknownFields) {
+            threadPool.emplace_back([&map]() {
+                std::unordered_map<Node*, Node> localSave;
+                Tryer(map, localSave).run();
+            });
+        };
+        for(auto& th : threadPool) {
+            th.join();
+        }
+        /*
         Node* firstUN = nullptr;
         for(Node& n : nodes) {
             if(n.has(State::UNKNOWN) && n.buildings == 1) {
-                const std::size_t index = &n - &nodes[0];
+                const std::size_t index = n.getIndex();
                 auto cp = nodes;
                 std::deque<Node*> tmp;
                 n.setUnknownsToAndGetNodes(true, tmp);
@@ -178,7 +367,7 @@ public:
             return true;
         }
         
-        const std::size_t index = firstUN - &nodes[0];
+        const std::size_t index = firstUN->getIndex();
         auto cp = nodes;
         
         Direction winner;
@@ -202,7 +391,7 @@ public:
                 nodes = std::move(cp);
             }
             return res;
-        }
+        }*/
     }
 
     static inline Node* get(const Coord& coord) {
@@ -213,7 +402,7 @@ public:
         return &nodes[i * maxNode.second + j];
     }
     
-    template<class Iterator>
+    template<class Iterator, State dir = State::BEFORE, bool full = false>
     struct Lambda {
         Iterator to;
         std::unordered_set<const Node*> used;
@@ -223,14 +412,14 @@ public:
         Lambda(Iterator to) : to(to), circle{false} {}
         
         inline void visit(const Node* node) {
-            if(circle) return;
+            if(!full && circle) return;
             if(!used.count(node)) {
                 used.insert(node);
                 visiting.insert(node);
                 for(int i = 0; i < 4; ++i) {
-                    if(node->neighbours[i] == State::BEFORE) {
+                    if(node->neighbours[i] == dir) {
                         visit(node->getNeighbour(static_cast<Direction>(i)));
-                        if(circle) return;
+                        if(!full && circle) return;
                     }
                 }
                 visiting.erase(node);
@@ -262,14 +451,14 @@ public:
     }
 
     inline bool checkAndAddEdges(std::deque<Node*>& nexts) {
-        
+
         //bool success = mtx.try_lock(); // sok a cache miss. Mégse jó 
         //if(success) return true;
         //std::lock_guard<std::mutex> lck (mtx, std::adopt_lock);
         
         if(!has(State::UNKNOWN)) {
             bool success = countOf(State::AFTER) + 1 == buildings || (neighboursCount == 4 && buildings == 1 && countOf(State::AFTER) == 4);
-            
+
             return success;
         }
             
@@ -301,12 +490,23 @@ public:
         } else
         {
             // do some trick
-            return true;
+            std::set<Coord> connections;
+            Lambda<decltype(std::inserter(connections, connections.end()))> l(std::inserter(connections, connections.end()));
+            l.visit(this);
             
+            for(int i = 0; i < 4; ++i) {
+                if(neighbours[i] == State::UNKNOWN && connections.count(getNeighbour(static_cast<Direction>(i))->coord)) {
+                    setEdge(static_cast<Direction>(i), true);
+                    nexts.push_back(getNeighbour(static_cast<Direction>(i)));
+                    //std::cout << "USED TRICK" << std::endl;
+                }
+            }
+            
+            return !l.circle;
+            //return true;
         }
-        
         bool success = countOf(State::AFTER) + 1 == buildings || (neighboursCount == 4 && buildings == 1 && countOf(State::AFTER) == 4);
-        
+
         return success;
     }
 };
@@ -344,7 +544,7 @@ void CalculateBuildOrder(const std::vector< std::vector<int> >& buildings,
     Node::maxNode = std::make_pair(buildings.size(), buildings[0].size());
     Node::nodes.clear();
     Node::nodes.reserve(buildings.size() * buildings[0].size());
-    Node::directionSlider = {-buildings[0].size(), -1, buildings[0].size(), 1};
+    Node::directionSlider = {int(-buildings[0].size()), -1, int(buildings[0].size()), 1};
 
     for(std::size_t i = 0; i < buildings.size(); ++i) {
         for(std::size_t j = 0; j < buildings[i].size(); ++j) {
@@ -370,8 +570,8 @@ void CalculateBuildOrder(const std::vector< std::vector<int> >& buildings,
     solution.clear();
     solution.reserve(Node::nodes.size());
     Node::topOrder(std::back_inserter(solution));
-    std::cout << "DONE" << std::endl;
-    printState();
+    //std::cout << "DONE" << std::endl;
+    //printState();
     
 }
 
