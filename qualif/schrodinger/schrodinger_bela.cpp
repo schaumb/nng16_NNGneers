@@ -7,26 +7,46 @@
 #include <algorithm>
 #include <iostream>
 
-std::size_t binarySearch(const std::set<std::size_t> set, std::function<bool (const std::vector<size_t>&)> fun) {
-    int from = 0, to = set.size();
-    auto begin = set.begin();
+template<typename Container> 
+std::size_t binarySearch(const Container& testSet, std::function<bool (const std::vector<std::size_t>&)> fun) {
+    std::size_t from = 0, to = testSet.size();
+    auto begin = testSet.begin();
 
     while(from + 1 != to) {
-        int middle = (from + to) / 2;
+        std::size_t middle = (from + to) / 2;
 
         bool res = fun(std::vector<std::size_t>(std::next(begin, from), std::next(begin, middle)));
 
         (res ? to : from) = middle;
     }
-    return from;
+    return from; // returns an index!!!
 }
 
-std::vector<size_t> FindMyRadioactiveBalls(size_t NumberOfBalls, size_t RadioactiveBalls,
-    std::function<bool (const std::vector<size_t>&)> TestFunction) {
+std::set<std::size_t> linearSearch(const std::set<std::size_t>& testSet, std::size_t count, std::function<bool (const std::vector<std::size_t>&)> fun) {
+    std::size_t countFalse = testSet.size() - count;
+    std::set<std::size_t> trues;
+    std::set<std::size_t> falses;
+
+    for(auto it = testSet.begin(); it != testSet.end(); ++it) {
+        bool res = fun({*it});
+        (res ? trues : falses).insert(*it);
+
+        if(countFalse == falses.size()) {
+            trues.insert(++it, testSet.end());
+        }
+        if(count == trues.size()) {
+            break;
+        }
+    }
+
+    return trues;
+}
+
+std::vector<std::size_t> FindMyRadioactiveBalls(std::size_t NumberOfBalls, std::size_t RadioactiveBalls,
+    std::function<bool (const std::vector<std::size_t>&)> fun) {
 
     std::set<std::size_t> weDontKnow;
     std::set<std::size_t> radioactives;
-    std::list<std::set<std::size_t>> myQuestions;
 
     for(std::size_t i = 0; i < NumberOfBalls; ++i) {
         weDontKnow.insert(i);
@@ -39,131 +59,31 @@ std::vector<size_t> FindMyRadioactiveBalls(size_t NumberOfBalls, size_t Radioact
             for(std::size_t s : weDontKnow) {
                 radioactives.insert(s);
             }
-            break;
         } else if(remainingBalls == 1) {
-            radioactives.insert(binarySearch(weDontKnow, TestFunction));
-            break;
-        }
-        
-        std::vector<std::set<std::size_t>> preDefinedQuestions(remainingBalls);
-        
-        std::size_t index = 0;
-        for(auto it = weDontKnow.begin(); it != weDontKnow.end(); ++it) {
-            std::size_t setIndex = index++ % remainingBalls;
-            preDefinedQuestions[setIndex].insert(*it);
-        }
-        
-        auto whichHasDuplicateQuestions = [&preDefinedQuestions, &myQuestions]() -> int {
-            int index = 0;
-            for(auto& question : preDefinedQuestions) {
-                bool allIn = false;
-                for(auto& set : myQuestions) {
-                    allIn = true;
-                    for(std::size_t elem : set) {
-                        if(!question.count(elem)) {
-                            allIn = false;
-                            break;
-                        }
-                    }
-                    if(allIn) {
-                        break;
-                    }
-                }
-                if(allIn) {
-                    return index;
-                }
-                ++index;
+            radioactives.insert(*std::next(weDontKnow.begin(), binarySearch(weDontKnow, fun)));
+        } else if(weDontKnow.size() < 2 * remainingBalls - 1) {
+            for(std::size_t s : linearSearch(weDontKnow, remainingBalls, fun)) {
+                radioactives.insert(s);
             }
-            return -1;
-        };
-        
-        std::size_t thisSetIsADuplicateQuestion = whichHasDuplicateQuestions();
-        
-        while(thisSetIsADuplicateQuestion != -1) {
-            std::size_t other = rand() % remainingBalls;
-            if(other == thisSetIsADuplicateQuestion) 
-                ++other %= remainingBalls;
-         
-            auto& duplicateSet = preDefinedQuestions[thisSetIsADuplicateQuestion];
-            auto& otherSet = preDefinedQuestions[other];
-            
-            std::size_t elementDuplicate = *std::next(duplicateSet.begin(), rand() % duplicateSet.size());
-            std::size_t elementOther = *std::next(otherSet.begin(), rand() % otherSet.size());
-            
-            duplicateSet.erase(elementDuplicate);
-            duplicateSet.insert(elementOther);
-            
-            otherSet.erase(elementOther);
-            otherSet.insert(elementDuplicate);
-            
-            thisSetIsADuplicateQuestion = whichHasDuplicateQuestions();
-        }
-        
-        bool allHas = true;
-        for(auto& question : preDefinedQuestions) {
-            bool res = TestFunction({question.begin(), question.end()});
-            
-            if(!res) {
-                for(auto it = myQuestions.begin(); it != myQuestions.end();) {
-                    for(std::size_t i : question) {
-                        it->erase(i);
-                    }
-
-                    if(it->size() == 1) {
-                        radioactives.insert(*it->begin());
-                        it = myQuestions.erase(it);
-                        continue;
-                    }
-
-                    ++it;
-                }
-                for(std::size_t i : question) {
-                    weDontKnow.erase(i);
-                }
-
-                for(std::size_t ra : radioactives) {
-                    weDontKnow.erase(ra);
-                    for(auto it = myQuestions.begin(); it != myQuestions.end();) {
-                        if(it->count(ra)) {
-                            it = myQuestions.erase(it);
-                        } else {
-                            ++it;
-                        }
-                    }
-                }
-                myQuestions.sort();
-                myQuestions.unique();
-
-                allHas = false;
-                break;
-            } else if(question.size() == 1) {
-                std::size_t elem = *question.begin();
-                radioactives.insert(elem);
-                weDontKnow.erase(elem);
-
-                for(auto it = myQuestions.begin(); it != myQuestions.end();) {
-                    if(it->count(elem)) {
-                        it = myQuestions.erase(it);
-                    } else {
-                        ++it;
-                    }
-                }
+        } else {
+            std::size_t count = std::pow(2, std::floor(std::log2((weDontKnow.size() - remainingBalls + 1) / remainingBalls)));
+            std::vector<std::size_t> testVec{weDontKnow.begin(), std::next(weDontKnow.begin(), count)};
+            bool res = fun(testVec);
+            if(res) {
+                std::size_t index = binarySearch(testVec, fun);
+                radioactives.insert(testVec[index]);
+                weDontKnow.erase(weDontKnow.begin(), std::next(weDontKnow.begin(), index + 1));
             } else {
-                myQuestions.push_back(question);
-            }
-        }
-
-        if(allHas) {
-            for(auto& question : preDefinedQuestions) {
-                radioactives.insert(binarySearch(question, TestFunction));
+                weDontKnow.erase(weDontKnow.begin(), std::next(weDontKnow.begin(), count));
             }
         }
     }
-    return std::vector<std::size_t>(radioactives.begin(), radioactives.end());
+
+    return {radioactives.begin(), radioactives.end()};
 }
 
-std::vector<size_t> FindRadioactiveBalls(size_t NumberOfBalls, size_t RadioactiveBalls,
-    bool (*TestFunction)(const std::vector<size_t>& BallsToTest)) {
+std::vector<std::size_t> FindRadioactiveBalls(std::size_t NumberOfBalls, std::size_t RadioactiveBalls,
+    bool (*TestFunction)(const std::vector<std::size_t>& BallsToTest)) {
     return FindMyRadioactiveBalls(NumberOfBalls, RadioactiveBalls, [&TestFunction](const std::vector<size_t>& BallsToTest) -> bool {
         bool result = TestFunction(BallsToTest);
         std::cout << "Tested: ";
