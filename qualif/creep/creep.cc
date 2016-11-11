@@ -20,6 +20,7 @@ int const energy_regeneration_q8 = 0.5 * 256; // 128
 // ilyen tempóban regenerálja az életét egy unit, 1/256 hp/s egységben
 int const health_regeneration_q8 = 0.25 * 256; // 64
 //#define COLOR_NONE
+#define COLOR_ANSI
 #define FONT_ASCII
 using namespace std;
 #define uint unsigned
@@ -704,6 +705,7 @@ struct game
 			o << x % 10;
 		o << "\n";
 
+		int creep_area = 0;
 		for (uint y = g.map_dy; y--;)
 		{
 			o << y % 10;
@@ -729,8 +731,11 @@ struct game
 				}
 				else if (creep_area_visible == 2 &&
 					in_radius(pos(x, y), g.cursor, creep_tumor::spawn_creep_tumor_radius))
+				{
 					/*spawn radius might not equal to spread radius in the future*/
 					o << COLOR_GREEN "+" COLOR_DEFAULT;
+					creep_area++;
+				}
 				else o << print_empty;
 			}
 			o << color_default << y % 10 << "\n";
@@ -740,7 +745,8 @@ struct game
 			o << x % 10;
 		o << "\n";
 		o << "creep_cover=" << g.creep_cover << std::endl;
-		
+		if (creep_area_visible == 2)
+			o << "creep_area=" << creep_area << std::endl;
 		return o;
 	}
 
@@ -813,7 +819,8 @@ void dump_Commands(const game& g)
 	ss << "iter_" << combinations << "_under_" << g.t_q2 << "steps.in";
 	std::ofstream os;
 	os.open(ss.str());
-	for (auto c = commands.rbegin(); c != commands.rend(); ++c)
+	os << commands.size() << std::endl;
+	for (auto c = commands.begin(); c != commands.end(); ++c)
 	{
 		os << *c;
 	}
@@ -909,11 +916,49 @@ int bestOption(int maxtime, game& g, int depth)
 	return g.t_q2;
 }
 
+std::vector<game> steps;
+
 int main(int argc, char **argv)
 {
-	assert(argc == 2 && "./creep map < in");
+	steps.reserve(700);
+	assert(argc >= 2 && "./creep map < in");
 	game g(argv[1]);
-		std::cout << g;
+	if (argc == 3) // ./creep map in
+	{
+		FILE* is = fopen(argv[2], "r");
+		int N=0;
+		fscanf(is, "%d", &N);
+		commands.reserve(N);
+		for (int i = 0; i < N; ++i)
+		{
+			int t, cmd, id, x, y;
+			fscanf(is, "%d%d%d%d%d", &t, &cmd, &id, &x, &y);
+			commands.push_back(command(t, cmd, id, pos(x, y)));
+			std::cout << commands.back();
+			while (g.t_q2 < t && g.t_q2 < g.t_limit_q2)
+			{
+				steps.push_back(g);
+				step(g, true);
+			}
+			std::cout << g;
+			if (cmd == 1)
+			{
+				steps.push_back(g);
+				g.queen_spawn_creep_tumor(g.get_queen(id), pos(x, y));
+			}
+			else if (cmd == 2)
+			{
+				steps.push_back(g);
+				g.creep_tumor_spawn_creep_tumor(g.get_creep_tumor(id), pos(x, y));
+			}
+			else assert(0 && "invalid cmd code");
+			std::cout << g;
+		}
+		fclose(is);
+		while (g.anything_to_do() && g.t_q2<g.t_limit_q2)
+			step(g, false);
+	}
+	std::cout << g;
 	/*	int N=100;
 		scanf("%d",&N);
 		for(int n=0; n<N && g.t_q2<g.t_limit_q2; ++n)
@@ -932,8 +977,6 @@ int main(int argc, char **argv)
 		//	while(g.anything_to_do() && g.t_q2<g.t_limit_q2)
 		step(g,false);
 		*/	
-	std::vector<game> steps;
-	steps.reserve(700);
 	for (char c = getchar(); c != '0'; c = getchar())
 	{
 		switch (c)
@@ -953,20 +996,30 @@ int main(int argc, char **argv)
 		}break;
 		case '-':
 		{
+			int prev_time = g.t_q2;
 			g = steps.back();
 			steps.pop_back();
+			while (prev_time == g.t_q2 && prev_time == commands.back().t)
+				commands.pop_back();
 		}break;
 		case '/':
 		{
 			for (auto i = 0; i < 10; ++i)
 			{
+				int prev_time = g.t_q2;
 				g = steps.back();
 				steps.pop_back();
+				while (prev_time == g.t_q2 && prev_time == commands.back().t)
+					commands.pop_back();
 			}
 		}break;
 		case 'c': case 'C':
 		{
 			creep_area_visible = (creep_area_visible + 1) % 3;
+		}break;
+		case 'p': case 'P':
+		{
+			dump_Commands(g);
 		}break;
 		case 'w': case 'W':
 		{
@@ -986,6 +1039,12 @@ int main(int argc, char **argv)
 		}break;
 		case 't':case 'T'://spawn from tumor
 		{
+/*			int last_time = commands.size() ? commands.back().t : -1;
+			if (last_time >= g.t_q2)
+			{
+				std::cout << "nem lehet egyszerre két dolgot csinálni" << std::endl;
+				break;
+			}*/
 			int possibles = 0;
 			int tumorid = -1;
 			for (auto b : g.buildings)
@@ -1054,6 +1113,12 @@ int main(int argc, char **argv)
 		}break;
 		case 'q':case 'Q'://spawn from queen
 		{
+/*			int last_time = commands.size() ? commands.back().t : -1;
+			if (last_time >= g.t_q2)
+			{
+				std::cout << "nem lehet egyszerre két dolgot csinálni" << std::endl;
+				break;
+			}*/
 			queen* maxq=g.units[0];
 			for (auto q : g.units)
 			{
@@ -1083,7 +1148,7 @@ int main(int argc, char **argv)
 		default:
 			if(c!= '\n') std::cout << "\nNincs ilyen parancs\'" << c << "\'\n\n";
 		}
-		if (c<'A') std::cout << g;
+		if (c<'a') std::cout << g;
 		if (g.cells_to_creep == g.creep_cover)
 		{
 			std::cout << " map finished, steps dumped time needed:" << g.t_q2 << endl;
@@ -1092,7 +1157,7 @@ int main(int argc, char **argv)
 	}
 	cout << "changed to automatic\n";
 	commands.reserve(50);
-	bestOption(682, g, 0);
+	bestOption(653, g, 0);
 	getchar();
 	return 0;
 }
