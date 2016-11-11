@@ -285,6 +285,17 @@ struct queen : public unit
 	static int const spawn_creep_tumor_energy_cost_q8 = int(25.0 * 256);
 };
 
+
+bool in_radius(const pos& p1, const pos& p2, int radius)
+{
+	int dx = p2.x - p1.x;
+	int dy = p2.y - p1.y;
+	int dx_q1 = 2 * dx + (0 < dx ? 1 : -1);
+	int dy_q1 = 2 * dy + (0 < dy ? 1 : -1);
+	int d2_q2 = dx_q1*dx_q1 + dy_q1*dy_q1;
+	return d2_q2 <= radius*radius * 4;
+}
+
 struct game
 {
 	game(char const *map_file_name) :
@@ -965,7 +976,9 @@ int main(int argc, char **argv)
 			int tumorid = -1;
 			for (auto b : g.buildings)
 			{
-				if (b->can_divide() && b->br.topleft() == g.cursor && b->can_divide())
+				if (b->can_divide() &&
+					in_radius(b->br.topleft(), g.cursor,creep_tumor::spawn_creep_tumor_radius) &&
+					b->can_divide())
 				{
 					possibles++;
 					tumorid = b->id;
