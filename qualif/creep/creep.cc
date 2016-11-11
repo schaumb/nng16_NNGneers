@@ -296,6 +296,8 @@ bool in_radius(const pos& p1, const pos& p2, int radius)
 	return d2_q2 <= radius*radius * 4;
 }
 
+int creep_area_visible = 0;
+
 struct game
 {
 	game(char const *map_file_name) :
@@ -708,7 +710,11 @@ struct game
 			for (uint x = 0; x < g.map_dx; ++x)
 			{
 				if (x == g.cursor.x && y == g.cursor.y)
-					o << 'X';
+					o << COLOR_RED "X" COLOR_DEFAULT;
+				else if (creep_area_visible == 1 &&
+					in_radius(pos(x, y), g.cursor, creep_tumor::spawn_creep_tumor_radius))
+					/*spawn radius might not equal to spread radius in the future*/
+					o << COLOR_GREEN "+" COLOR_DEFAULT;
 				else if (g.map_wall[y][x])
 					o << print_wall;
 				else if (g.map_building[y][x])
@@ -721,6 +727,10 @@ struct game
 						o << print_creep_candidate;
 					else o << print_creep_radius;
 				}
+				else if (creep_area_visible == 2 &&
+					in_radius(pos(x, y), g.cursor, creep_tumor::spawn_creep_tumor_radius))
+					/*spawn radius might not equal to spread radius in the future*/
+					o << COLOR_GREEN "+" COLOR_DEFAULT;
 				else o << print_empty;
 			}
 			o << color_default << y % 10 << "\n";
@@ -953,6 +963,10 @@ int main(int argc, char **argv)
 				g = steps.back();
 				steps.pop_back();
 			}
+		}break;
+		case 'c': case 'C':
+		{
+			creep_area_visible = (creep_area_visible + 1) % 3;
 		}break;
 		case 'w': case 'W':
 		{
