@@ -19,7 +19,7 @@ int const dt_tick_q8 = 0.25 * 256; // 64
 int const energy_regeneration_q8 = 0.5 * 256; // 128
 // ilyen tempóban regenerálja az életét egy unit, 1/256 hp/s egységben
 int const health_regeneration_q8 = 0.25 * 256; // 64
-#define COLOR_NONE
+//#define COLOR_NONE
 #define FONT_ASCII
 using namespace std;
 #define uint unsigned
@@ -393,6 +393,41 @@ struct game
 				}
 			}
 		}
+	}
+	game& operator=(const game& other)
+	{
+		next_id = other.next_id;
+		t_q2 = other.t_q2;
+		t_limit_q2 = other.t_limit_q2;
+		p_base = other.p_base;
+		map_dx = other.map_dx;
+		map_dy = other.map_dy;
+		creep_cover = other.creep_cover;
+		cells_to_creep = other.cells_to_creep;
+
+		units.clear();
+		buildings.clear();
+		std::memcpy(map_wall, other.map_wall, mapSize()*sizeof(int));
+		std::memcpy(map_creep_gen, other.map_creep_gen, mapSize()*sizeof(int));
+		std::memcpy(map_building, other.map_building, mapSize()*sizeof(building*));
+		std::memcpy(map_creep, other.map_creep, mapSize()*sizeof(bool));
+		units.reserve(other.units.size());
+		buildings.reserve(other.buildings.size());
+		for (auto p : other.units)
+			units.push_back(new queen(*p));
+		for (auto p : other.buildings)
+		{
+			buildings.push_back(p->clone());
+			auto& b = *buildings.back();
+			for (int y = b.br.y0; y < b.br.y1; ++y)
+			{
+				for (int x = b.br.x0; x < b.br.x1; ++x)
+				{
+					map_building[y][x] = buildings.back();
+				}
+			}
+		}
+		return *this;
 	}
 	bool valid_pos(pos const &p) const
 	{
