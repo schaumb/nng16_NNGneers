@@ -106,6 +106,11 @@ struct pos
 		return{ a.x + b.x, a.y + b.y };
 	}
 
+	friend pos operator-(const pos a, const pos b)
+	{
+		return{ a.x - b.x, a.y - b.y };
+	}
+
 	inline int disgusting_area_estimation() const
 	{
 		return  (std::abs(2 * x) + 1)*(std::abs(2 * x) + 1) + (std::abs(2 * y) + 1)*(std::abs(2 * y) + 1);
@@ -171,7 +176,7 @@ struct building : public object
 		max_health_q8 = max_health * 256;
 		health_q8 = max_health_q8;
 	}
-	virtual building* clone()=0;
+	virtual building* clone() = 0;
 	virtual ~building() {}
 	virtual creep_tumor& a_creep_tumor_i_suppose() { assert(0 && "not a creep tumor"); abort(); }
 	virtual bool can_divide(){ return false; }
@@ -425,7 +430,7 @@ struct game
 		{
 			for (dis.x = -radius + 1; dis.x < radius; ++dis.x)
 			{
-				if (dis.disgusting_area_estimation() > 4*radius*radius) continue; //csúnya becslés, nem én voltam.
+				if (dis.disgusting_area_estimation() > 4 * radius*radius) continue; //csúnya becslés, nem én voltam.
 
 				pos p = dis + p0;
 				if (!valid_pos(p)) continue;
@@ -446,14 +451,14 @@ struct game
 
 			for (dis.x = -maxradius + 1; dis.x < maxradius; ++dis.x)
 			{
-				if (dis.disgusting_area_estimation() > 4*maxradius*maxradius) continue;
-				if (dis.disgusting_area_estimation() <= 4*minradius*minradius) continue;
+				if (dis.disgusting_area_estimation() > 4 * maxradius*maxradius) continue;
+				if (dis.disgusting_area_estimation() <= 4 * minradius*minradius) continue;
 				pos p = dis + p0;
 
 				if (!valid_pos(p) || map_building[p.y][p.x] || map_wall[p.y][p.x] || !map_creep[p.y][p.x] || !has_free_cell_near(p, free_cell_radius))	continue;
 				retval.push_back(p);
 			}
-			return retval;
+		return retval;
 	}
 	// ha ez a cella szabad és nincs rajta creep,
 	// a szomszédban valahol van creep, akkor ide terjeszkedhet
@@ -530,6 +535,15 @@ struct game
 			}
 		} while (go);
 	}
+
+	void keep_cursor_in_map()
+	{
+		cursor.x = max(0, cursor.x);
+		cursor.x = min(map_dx, cursor.x);
+		cursor.y = max(0, cursor.y);
+		cursor.x = min(map_dy, cursor.x);
+	}
+
 	void tick()
 	{
 		spread_creep();
@@ -540,6 +554,7 @@ struct game
 		++t_q2;
 		if (t_q2*dt_tick_q8%queen::dt_build_time_q8 == 0)
 			add_unit(new queen());
+		keep_cursor_in_map();
 	}
 	void add_building(building *p)
 	{
@@ -640,12 +655,15 @@ struct game
 		for (uint x = 0; x < g.map_dx; ++x)
 			o << x % 10;
 		o << "\n";
+
 		for (uint y = g.map_dy; y--;)
 		{
 			o << y % 10;
 			for (uint x = 0; x < g.map_dx; ++x)
 			{
-				if (g.map_wall[y][x])
+				if (x == g.cursor.x && y == g.cursor.y)
+					o << 'X';
+				else if (g.map_wall[y][x])
 					o << print_wall;
 				else if (g.map_building[y][x])
 					o << g.map_building[y][x]->map_cell_code();
@@ -666,6 +684,7 @@ struct game
 			o << x % 10;
 		o << "\n";
 		o << "creep_cover=" << g.creep_cover << std::endl;
+		
 		return o;
 	}
 
@@ -682,11 +701,13 @@ struct game
 	int map_wall[map_max_dy][map_max_dx];
 	building* map_building[map_max_dy][map_max_dx];
 	int cells_to_creep;
+	pos cursor;
 };
 
 void step(game &g, bool turbo)
 {
 	g.tick();
+	return;
 	std::cout << g;
 	double speed =
 #if defined SPEED
@@ -711,6 +732,14 @@ struct command
 	command(int time) :
 		t(time)
 	{}
+
+	command(int time, int command, int _id, pos p) :
+		t(time),
+		cmd(command),
+		id(_id),
+		x(p.x),
+		y(p.y)
+	{}
 	friend std::ostream &operator<< (std::ostream &o, command const &c)
 	{
 		o << c.t << " " << c.cmd << " " << c.id << " " << c.x << " " << c.y << std::endl;
@@ -720,28 +749,40 @@ struct command
 
 long long combinations = 0;
 std::vector<command> commands;
+# define maxitr 35
 
+void dump_Commands(const game& g)
+{
+	std::stringstream ss;
+	ss << "iter_" << combinations << "_under_" << g.t_q2 << "steps.in";
+	std::ofstream os;
+	os.open(ss.str());
+	for (auto c = commands.rbegin(); c != commands.rend(); ++c)
+	{
+		os << *c;
+	}
+}
 int bestOption(int maxtime, game& g, int depth)
 {
+
 	//kifutottunk az időből || megtelt a pálya creeppel
-	while (g.t_q2 <= maxtime && g.cells_to_creep > g.creep_cover )
+	while (g.t_q2 <= maxtime && g.cells_to_creep > g.creep_cover && depth <= maxitr)
 	{
-		command c(g.t_q2 + 1);//a következő körben lépünk (mi értelme van várni, ha időre megy?)
+		command c(g.t_q2);
 		for (auto b : g.buildings)
 		{
 			if (!b->can_divide()){ continue; }
 
-			auto cells = g.cells_to_divide_from_tumor(b->br.topleft(), 3, 10, 2);
+			auto cells = g.cells_to_divide_from_tumor(b->br.topleft(), 5, 10, 1);
 			for (auto cell : cells)
 			{
-
 				c.cmd = 2;
 				c.id = b->id;
 				c.x = cell.x;
 				c.y = cell.y;
 				auto child = std::make_shared<game>(g);
 
-			//	cout << g;
+				//	cout << g;
 				child->creep_tumor_spawn_creep_tumor(child->get_creep_tumor(b->id), cell);
 				commands.push_back(c);
 				int newtime = bestOption(maxtime, *child, depth + 1);
@@ -749,9 +790,17 @@ int bestOption(int maxtime, game& g, int depth)
 			}
 		}
 
+
+		queen *best_queen = g.units[0];
 		for (auto queen : g.units)
 		{
-			if (queen::spawn_creep_tumor_energy_cost_q8 > queen->energy_q8) continue;
+			if (queen->energy_q8>best_queen->energy_q8)
+			{
+				best_queen = queen;
+			}
+		}
+		if (queen::spawn_creep_tumor_energy_cost_q8 <= best_queen->energy_q8)
+		{
 			for (uint y = 1; y < g.map_dy - 1; ++y)
 			{
 				//a határ mindenhol fal,egy-egy sort lehagyunk
@@ -759,17 +808,27 @@ int bestOption(int maxtime, game& g, int depth)
 				{
 					pos p(x, y);
 					if (g.valid_pos(p) && !g.map_wall[p.y][p.x] && !g.map_building[p.y][p.x]
-						&& g.map_creep[p.y][p.x] && g.has_free_cell_near(pos( x, y ), 2))
+						&& g.map_creep[p.y][p.x] && g.has_free_cell_near(pos(x, y), 2))
 					{
-
+						bool  step = false;
+						for (auto b : g.buildings)
+						{
+							if (b->can_divide() && (b->br.topleft() - pos(x, y)).disgusting_area_estimation() < 400)
+							{
+								step = true;
+								break;
+							}
+						}
+						if (step) continue;
+						if (depth == 0) std::cout << "testing x: " << x << " y: " << y << endl;
 						c.cmd = 1;
-						c.id = queen->id;
+						c.id = best_queen->id;
 						c.x = x;
 						c.y = y;
-					//	cout << g;
+						//	cout << g;
 
 						auto child = std::make_shared<game>(g);
-						child->queen_spawn_creep_tumor(child->get_queen(queen->id), p);
+						child->queen_spawn_creep_tumor(child->get_queen(best_queen->id), p);
 
 						commands.push_back(c);
 						int newtime = bestOption(maxtime, *child, depth + 1);
@@ -778,21 +837,17 @@ int bestOption(int maxtime, game& g, int depth)
 				}
 			}
 		}
+
 		g.tick();
 	}
 
 	combinations++;
-	if (maxtime >= g.t_q2)
-	{
-		std::stringstream ss;
-		ss << "iter_" << combinations << "_under_" << g.t_q2 << "steps.in";
-		std::ofstream os;
-		os.open(ss.str());
 
-		for (auto c = commands.rbegin(); c != commands.rend(); ++c)
-		{
-			os << *c;
-		}
+	if (combinations % 10000 == 0)
+		std::cout << " iterations: " << combinations << endl;
+	if (maxtime > g.t_q2 && depth<= maxitr)
+	{
+		dump_Commands(g);
 	}
 	commands.pop_back();
 	return g.t_q2;
@@ -802,27 +857,180 @@ int main(int argc, char **argv)
 {
 	assert(argc == 2 && "./creep map < in");
 	game g(argv[1]);
-	/*	std::cout << g;
-		int N=0;
+		std::cout << g;
+	/*	int N=100;
 		scanf("%d",&N);
 		for(int n=0; n<N && g.t_q2<g.t_limit_q2; ++n)
 		{
 		int t,cmd,id,x,y;
 		scanf("%d%d%d%d%d",&t,&cmd,&id,&x,&y);
-		assert(g.t_q2<=t && "can't go back in time sry");
+		if (g.t_q2 > t)break;
 		while(g.t_q2<t && g.t_q2<g.t_limit_q2)
 		step(g,true);
 		if(cmd==1)
 		g.queen_spawn_creep_tumor(g.get_queen(id),pos(x,y));
 		else if(cmd==2)
 		g.creep_tumor_spawn_creep_tumor(g.get_creep_tumor(id),pos(x,y));
-		else assert(0 && "invalid cmd code");
+		else break;
 		}
-		while(g.anything_to_do() && g.t_q2<g.t_limit_q2)
+		//	while(g.anything_to_do() && g.t_q2<g.t_limit_q2)
 		step(g,false);
-		*/
+		*/	
+	std::vector<game> steps;
+	steps.reserve(700);
+	for (char c = getchar(); c != '0'; c = getchar())
+	{
+		switch (c)
+		{
+		case '+':
+		{
+			steps.push_back(g);
+			g.tick();
+		}break;
+		case '*':
+		{
+			for (auto i = 0; i < 10; ++i)
+			{
+				steps.push_back(g);
+				g.tick();
+			}
+		}break;
+		case '-':
+		{
+			g = steps.back();
+			steps.pop_back();
+		}break;
+		case '/':
+		{
+			for (auto i = 0; i < 10; ++i)
+			{
+				g = steps.back();
+				steps.pop_back();
+			}
+		}break;
+		case 'w': case 'W':
+		{
+			g.cursor.y++;
+		}break;
+		case 'a': case 'A':
+		{
+			g.cursor.x--;
+		}break;
+		case 's': case 'S':
+		{
+			g.cursor.y--;
+		}break;
+		case 'd': case 'D':
+		{
+			g.cursor.x++;
+		}break;
+		case 't':case 'T'://spawn from tumor
+		{
+			int possibles = 0;
+			int tumorid = -1;
+			for (auto b : g.buildings)
+			{
+				if (b->can_divide() && b->br.topleft() == g.cursor && b->can_divide())
+				{
+					possibles++;
+					tumorid = b->id;
+				}
+			}
+			if (possibles == 1)
+			{
+
+				steps.push_back(g);
+				commands.push_back(command(g.t_q2, 2, tumorid, g.cursor));
+				try
+				{
+					g.creep_tumor_spawn_creep_tumor(g.get_creep_tumor(tumorid), g.cursor);
+				}
+				catch (...)
+				{
+					std::cout << "cannot spawn here\n";
+					g = steps.back();
+					steps.pop_back();
+					commands.pop_back();
+				}
+			}
+			else if (possibles > 1)
+			{
+				bool found;
+				do
+				{
+					std::cout << "adj id-t\n";
+					scanf("%d", &tumorid);
+					found = false;
+
+					for (auto b : g.buildings)
+					{
+						if (b->id == tumorid && b->can_divide())
+						{
+							found = true;
+							break;
+						}
+					}
+				} while (!found);
+				steps.push_back(g);
+				commands.push_back(command(g.t_q2,2,tumorid,g.cursor));
+				try
+				{
+					g.creep_tumor_spawn_creep_tumor(g.get_creep_tumor(tumorid), g.cursor);
+				}
+				catch (...)
+				{
+					std::cout << "cannot spawn here\n";
+					g = steps.back();
+					steps.pop_back();
+					commands.pop_back();
+				}
+			}
+			else
+			{
+				std::cout << "nincs aktiv tumor a Kozelben (meg szereted e cseh remeket)\n";
+			}
+		}break;
+		case 'q':case 'Q'://spawn from queen
+		{
+			queen* maxq=g.units[0];
+			for (auto q : g.units)
+			{
+				if (maxq->energy_q8 < q->energy_q8) maxq = q;
+			}
+			if (!maxq->has_enough_energy_to_spawn())
+			{
+				steps.push_back(g);
+				commands.push_back(command(g.t_q2, 1, maxq->id, g.cursor));
+				try
+				{
+					g.queen_spawn_creep_tumor(g.get_queen(maxq->id), g.cursor);
+				}
+				catch (...)
+				{
+					std::cout << "cannot spawn here\n";
+					g = steps.back();
+					steps.pop_back();
+					commands.pop_back();
+				}
+			}
+			else
+			{
+				std::cout << "no queen has enough energy\n";
+			}
+		}break;
+		default:
+			if(c!= '\n') std::cout << "\nNincs ilyen parancs\'" << c << "\'\n\n";
+		}
+		if (c<'A') std::cout << g;
+		if (g.cells_to_creep == g.creep_cover)
+		{
+			std::cout << " map finished, steps dumped time needed:" << g.t_q2 << endl;
+			dump_Commands(g);
+		}
+	}
+	cout << "changed to automatic\n";
 	commands.reserve(50);
-	bestOption(595, g, 0);
-	cout << "total iterations: " << combinations;
+	bestOption(682, g, 0);
+	getchar();
 	return 0;
 }
