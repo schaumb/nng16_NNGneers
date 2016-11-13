@@ -1,7 +1,7 @@
 #include <SFML/Graphics.hpp>
 #include <SFML/Graphics/RectangleShape.hpp>
 #include <vector>
-#include <unordered_map>
+#include <map>
 #include "Source.hpp"
 
 sf::Color getColorByType(Type type) {
@@ -300,7 +300,7 @@ int main(int argc, char ** argv)
             window.draw(shape);
         }
         
-        std::unordered_map<Type, int> statistic;
+        std::map<Type, int> statistic;
         // mezők
         for(int i = 0; i < maxPos.x; ++i) {
             for(int j = 0; j < maxPos.y; ++j) {

@@ -503,7 +503,7 @@ public:
             }
             
             // spread creep:
-            auto l = [](auto p1, auto p2) { return p1->getId() < p2->getId(); };
+            auto l = [](Building* p1, Building* p2) { return p1->getId() < p2->getId(); };
             std::set<Building*, decltype(l)> buildings(l);
             
             
