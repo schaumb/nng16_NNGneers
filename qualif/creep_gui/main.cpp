@@ -1,6 +1,7 @@
 #include <SFML/Graphics.hpp>
 #include <SFML/Graphics/RectangleShape.hpp>
 #include <vector>
+#include <unordered_map>
 #include "Source.hpp"
 
 sf::Color getColorByType(Type type) {
@@ -265,6 +266,7 @@ int main(int argc, char ** argv)
             window.draw(shape);
         }
         
+        std::unordered_map<Type, int> statistic;
         // mezők
         for(int i = 0; i < maxPos.x; ++i) {
             for(int j = 0; j < maxPos.y; ++j) {
@@ -275,6 +277,26 @@ int main(int argc, char ** argv)
                 shape.setOutlineColor(pos == selectedPos ? sf::Color::Blue : sf::Color::Magenta);
                 shape.setOutlineThickness(1.1);
                 window.draw(shape);
+                
+                switch(building.getType()) {
+                case Type::EMPTY:
+                case Type::WALL:
+                    ++statistic[building.getType()];
+                    break;
+                case Type::CREEP_CANDIDATE:
+                case Type::CREEP_RADIUS:
+                    ++statistic[Type::CREEP_RADIUS];
+                    break;
+                case Type::HATCHERY:
+                case Type::CREEP:
+                case Type::TUMOR_INACTIVE:
+                    ++statistic[Type::CREEP];
+                    break;
+                case Type::TUMOR_ACTIVE:
+                case Type::TUMOR_COOLDOWN:
+                    ++statistic[Type::TUMOR_ACTIVE];
+                    break;
+                }
                 
                 std::stringstream ss;
                 building.printMyself(ss);
@@ -287,7 +309,18 @@ int main(int argc, char ** argv)
                 }
             }
         }
+        
         window.draw(rectangles[selectedPos.x][selectedPos.y]);
+        
+        // statisztika
+        std::stringstream statStream;
+        for(auto& pair : statistic) {
+            statStream << "'" << static_cast<char>(pair.first) << "': " << pair.second << std::endl;
+        }
+        sf::Text statText(statStream.str(), font, 12);
+        statText.setPosition(1200, 10);
+        window.draw(statText);
+        
         
         // unitok
         auto& units = state.units;
