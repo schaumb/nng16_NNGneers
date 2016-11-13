@@ -127,6 +127,16 @@ int main(int argc, char ** argv)
     replayText.setPosition(810, 367);
     replayText.setColor(sf::Color::Black);
     
+    
+    sf::RectangleShape step({150, 30});
+    step.setPosition(810, 405);
+    step.setFillColor(sf::Color::Yellow);
+    
+    sf::Text stepText("STEP", font, 12);
+    stepText.setPosition(810, 412);
+    stepText.setColor(sf::Color::Black);
+    
+    
     Pos selectedPos = {0, 0};
     int selectedObject = 2;
     
@@ -234,12 +244,17 @@ int main(int argc, char ** argv)
                     game.play();
                 }
                 
+                // replay
                 if(isIn(replay, point)) {
                     inReplay = true;
                     toReplay = game.getTime();
                     game.setTime(0);
                     
                     clock.restart();
+                }
+                
+                if(isIn(step, point)) {
+                    game.play(true);
                 }
             }
             
@@ -372,6 +387,8 @@ int main(int argc, char ** argv)
         window.draw(playText);
         window.draw(replay);
         window.draw(replayText);
+        window.draw(step);
+        window.draw(stepText);
         
         window.display();
     }

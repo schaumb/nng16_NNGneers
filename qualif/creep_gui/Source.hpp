@@ -328,6 +328,7 @@ public:
                 std::cerr << "Bigger than time limit" << std::endl;
                 std::exit(1);
             }
+
             states[time].commands.push_back(c);
         }
     }
@@ -455,7 +456,7 @@ public:
         this->time = time;
     }
     
-    void play() {
+    void play(bool stopWhenNoCommand = false) {
         time = 0;
         bool wasChange = true;
         for(time = 0; wasChange && time < timeLimit;) {
@@ -496,6 +497,12 @@ public:
             
             for(auto& line : state.map) {
                 for(auto& building : line) {
+                
+                    if(stopWhenNoCommand && building.getType() == Type::TUMOR_ACTIVE) {
+                        std::cerr << "NO tumor child for: " << building.getId() << std::endl;
+                        --time;
+                        return;
+                    }
                     building.tick();
                     if(building.getId() != -1) {
                         buildings.insert(&building);
@@ -504,6 +511,8 @@ public:
             }
             
             for(Building* ptr : buildings) {
+            
+                
                 std::vector<Pos> valids = validCells(ptr->getPos(), getCreepSpreadRadius(ptr->getType()));
                 std::vector<Pos> poss = filterCreepables(valids);
                 
@@ -520,6 +529,11 @@ public:
             }
             
             for(auto& unit : state.units) {
+                if(stopWhenNoCommand && unit.canCreateTumor()) {
+                    std::cerr << "unit " << unit.getId() << " not created tumor" << std::endl;
+                    --time;
+                    return;
+                }
                 unit.tick();
             }
             
