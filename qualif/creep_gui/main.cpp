@@ -137,6 +137,14 @@ int main(int argc, char ** argv)
     stepText.setColor(sf::Color::Black);
     
     
+    sf::RectangleShape back({150, 30});
+    back.setPosition(810, 450);
+    back.setFillColor(sf::Color::Yellow);
+    
+    sf::Text backText("BACK", font, 12);
+    backText.setPosition(810, 457);
+    backText.setColor(sf::Color::Black);
+    
     Pos selectedPos = {0, 0};
     int selectedObject = 2;
     
@@ -253,8 +261,19 @@ int main(int argc, char ** argv)
                     clock.restart();
                 }
                 
+                // step
                 if(isIn(step, point)) {
                     game.play(true);
+                }
+                
+                // back
+                if(isIn(back, point)) {
+                    for(int i = game.getTime() - 1; i >= 0; --i) {
+                        game.setTime(i);
+                        if(game.getState().commands.size()) {
+                            break;
+                        }
+                    }
                 }
             }
             
@@ -389,6 +408,8 @@ int main(int argc, char ** argv)
         window.draw(replayText);
         window.draw(step);
         window.draw(stepText);
+        window.draw(back);
+        window.draw(backText);
         
         window.display();
     }

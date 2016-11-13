@@ -329,6 +329,7 @@ public:
                 std::exit(1);
             }
 
+
             states[time].commands.push_back(c);
         }
     }
@@ -457,9 +458,11 @@ public:
     }
     
     void play(bool stopWhenNoCommand = false) {
-        time = 0;
+        if(!stopWhenNoCommand) {
+            time = 0;
+        }
         bool wasChange = true;
-        for(time = 0; wasChange && time < timeLimit;) {
+        for(; wasChange && time < timeLimit;) {
             wasChange = false;
             auto& commands = getState().commands;
             State& prevState = getState();
@@ -482,6 +485,15 @@ public:
                 } else if(c.cmd == 2) {
                     Building* b = getBuilding(c.id);
                     if(b == nullptr) { std::cerr << "WRONG ID - no building" << std::endl; --time; return; }
+                    
+                    auto&& valids = validCells(b->getPos(), getCreepSpreadRadius(b->getType()));
+                    
+                    if(std::none_of(valids.begin(), valids.end(), [&c](const Pos& p) { return p == c.pos; })) {
+                        std::cerr << "Too far" << std::endl;
+                        --time;
+                        return;
+                    }
+                    
                     Building& bn = getBuilding(c.pos);
                     if(bn.getType() != Type::CREEP) { std::cerr << "NOT ON CREEP" << std::endl; --time; return; }
                     addBuilding(c.pos, Type::TUMOR_COOLDOWN);
