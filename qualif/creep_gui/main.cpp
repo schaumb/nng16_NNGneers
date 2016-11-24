@@ -147,6 +147,7 @@ int main(int argc, char ** argv)
     
     sf::Text statusText("STATUS", font, 16);
     statusText.setPosition(650, 620);
+    std::string statusMessage = "";
     
     Pos selectedPos = {0, 0};
     int selectedObject = 2;
@@ -261,7 +262,7 @@ int main(int argc, char ** argv)
                 
                 // play
                 if(isIn(play, point)) {
-                    game.play();
+                    statusMessage = game.play();
                 }
                 
                 // replay
@@ -275,7 +276,7 @@ int main(int argc, char ** argv)
                 
                 // step
                 if(isIn(step, point)) {
-                    game.play(true);
+                    statusMessage = game.play(true);
                 }
                 
                 // back
@@ -444,9 +445,10 @@ int main(int argc, char ** argv)
         
         // status bar:
         std::stringstream statusSS;
-        statusSS << "selected: " << selectedPos.y << ", " << selectedPos.x << " - overPos: " << 
+        statusSS << selectedPos.y << ", " << selectedPos.x << " - " << 
             mouseOverPos.y << ", " << mouseOverPos.x << " | " 
-            << "empties: " << emptiesOver << " & creepablesOver: " << creepablesOver;
+            << "empty: " << emptiesOver << " creepable: " << creepablesOver << " | "
+            << statusMessage;
 
         statusText.setString(statusSS.str());
         window.draw(statusText);

@@ -330,6 +330,7 @@ public:
             }
 
 
+
             states[time].commands.push_back(c);
         }
     }
@@ -457,7 +458,7 @@ public:
         this->time = time;
     }
     
-    void play(bool stopWhenNoCommand = false) {
+    std::string play(bool stopWhenNoCommand = false) {
         if(!stopWhenNoCommand) {
             time = 0;
         }
@@ -475,27 +476,26 @@ public:
             for(Command& c : commands) {
                 if(c.cmd == 1) {
                     Unit* unit = getQueen(c.id);
-                    if(unit == nullptr) { std::cerr << "WRONG ID - no queen" << std::endl; --time; return; }
-                    if(!unit->canCreateTumor()) { std::cerr << "CAN NOT CREATE A TUMOR - not enough energy" << std::endl; --time; return; }
+                    if(unit == nullptr) { --time; return "WRONG ID - no queen"; }
+                    if(!unit->canCreateTumor()) { --time; return "CAN NOT CREATE A TUMOR - not enough energy"; }
                     Building& b = getBuilding(c.pos);
-                    if(b.getType() != Type::CREEP) { std::cerr << "NOT ON CREEP - queen" << std::endl; --time; return; }
+                    if(b.getType() != Type::CREEP) { --time; return "NOT ON CREEP - queen"; }
                     addBuilding(c.pos, Type::TUMOR_COOLDOWN);
                     unit->builtTumor();
                     wasChange = true;
                 } else if(c.cmd == 2) {
                     Building* b = getBuilding(c.id);
-                    if(b == nullptr) { std::cerr << "WRONG ID - no building" << std::endl; --time; return; }
+                    if(b == nullptr) { --time; return "WRONG ID - no building"; }
                     
                     auto&& valids = validCells(b->getPos(), getCreepSpreadRadius(b->getType()));
                     
                     if(std::none_of(valids.begin(), valids.end(), [&c](const Pos& p) { return p == c.pos; })) {
-                        std::cerr << "Too far" << std::endl;
                         --time;
-                        return;
+                        return "Too far";
                     }
                     
                     Building& bn = getBuilding(c.pos);
-                    if(bn.getType() != Type::CREEP) { std::cerr << "NOT ON CREEP" << std::endl; --time; return; }
+                    if(bn.getType() != Type::CREEP) { --time; return "NOT ON CREEP"; }
                     addBuilding(c.pos, Type::TUMOR_COOLDOWN);
                     b->setToInactive();
                     wasChange = true;
@@ -511,9 +511,8 @@ public:
                 for(auto& building : line) {
                 
                     if(stopWhenNoCommand && building.getType() == Type::TUMOR_ACTIVE) {
-                        std::cerr << "NO tumor child for: " << building.getId() << std::endl;
                         --time;
-                        return;
+                        return "NO tumor for child";
                     }
                     building.tick();
                     if(building.getId() != -1) {
@@ -542,9 +541,8 @@ public:
             
             for(auto& unit : state.units) {
                 if(stopWhenNoCommand && unit.canCreateTumor()) {
-                    std::cerr << "unit " << unit.getId() << " not created tumor" << std::endl;
                     --time;
-                    return;
+                    return "unit not created tumor";
                 }
                 unit.tick();
             }
@@ -554,6 +552,7 @@ public:
             }
         }
         --time;
+        return "";
     }
     
     Unit* getQueen(int id) {
