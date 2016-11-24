@@ -145,8 +145,12 @@ int main(int argc, char ** argv)
     backText.setPosition(810, 457);
     backText.setColor(sf::Color::Black);
     
+    sf::Text statusText("STATUS", font, 16);
+    statusText.setPosition(650, 620);
+    
     Pos selectedPos = {0, 0};
     int selectedObject = 2;
+    Pos mouseOverPos = {0, 0};
     
     sf::RenderWindow window(sf::VideoMode(1250, 640), "Creep GUI!");
     
@@ -168,11 +172,19 @@ int main(int argc, char ** argv)
             {
                 isMouseButtonPressed = false;
             }
+            auto pos = sf::Mouse::getPosition(window);
+            sf::Vector2f point = sf::Vector2f(pos.x, pos.y);
+            
+            // mező felett
+            for(int i = 0; i < maxPos.x; ++i) {
+                for(int j = 0; j < maxPos.y; ++j) {
+                    if(isIn(rectangles[i][j], point)) {
+                        mouseOverPos = Pos {i, j};
+                    }
+                }
+            }
             
             if(isMouseButtonPressed) {
-                auto pos = sf::Mouse::getPosition(window);
-                sf::Vector2f point = sf::Vector2f(pos.x, pos.y);
-                
                 // mezőre klatty
                 for(int i = 0; i < maxPos.x; ++i) {
                     for(int j = 0; j < maxPos.y; ++j) {
@@ -284,6 +296,7 @@ int main(int argc, char ** argv)
         if(inReplay && clock.getElapsedTime() > sf::seconds(0.05f)) {
             if(game.getTime() >= toReplay) {
                 inReplay = false;
+                game.setTime(toReplay);
             } else {
                 game.setTime(game.getTime() + 4);
                 clock.restart();
@@ -341,6 +354,24 @@ int main(int argc, char ** argv)
                     timeText.setPosition(650 + building.getId() / 35 *160, (building.getId() % 35) * 15 + 90);
                     window.draw(timeText);
                 }
+            }
+        }
+        
+        int emptiesOver = 0;
+        int creepablesOver = 0;
+        for(auto& radPos : game.validCells(mouseOverPos, 
+            getCreepSpreadRadius(Type::TUMOR_COOLDOWN)))
+        {
+            const Building& building = state.map[radPos.y][radPos.x];
+            if(building.getType() != Type::WALL) {
+                sf::RectangleShape over = rectangles[radPos.x][radPos.y];
+                over.setOutlineColor(sf::Color(255, 255, 255, 0));
+                over.setFillColor(sf::Color(0, 0, 0, 127));
+                
+                emptiesOver += building.getType() == Type::EMPTY;
+                creepablesOver += isCreepable(building.getType());
+                
+                window.draw(over);
             }
         }
         
@@ -410,6 +441,15 @@ int main(int argc, char ** argv)
         window.draw(stepText);
         window.draw(back);
         window.draw(backText);
+        
+        // status bar:
+        std::stringstream statusSS;
+        statusSS << "selected: " << selectedPos.y << ", " << selectedPos.x << " - overPos: " << 
+            mouseOverPos.y << ", " << mouseOverPos.x << " | " 
+            << "empties: " << emptiesOver << " & creepablesOver: " << creepablesOver;
+
+        statusText.setString(statusSS.str());
+        window.draw(statusText);
         
         window.display();
     }
