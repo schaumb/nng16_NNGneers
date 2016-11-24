@@ -5,6 +5,21 @@
 #include <iterator>
 #include <vector>
 #include <set>
+#include <stdexcept>
+#define nembela
+#ifdef nembela
+namespace std
+{
+    template <typename T>
+    string to_string(T val)
+    {
+        stringstream stream;
+        stream << val;
+        return stream.str();
+    }
+}
+#define uint unsigned
+#endif
 
 enum class Type : char { 
     EMPTY = ' ', 
