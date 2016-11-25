@@ -13,7 +13,9 @@ struct DumbAreaStrategy : public IAreaStrategy
 	std::vector<MAP_OBJECT> mEnemyQueens;
 	/*remove!!!*/
 	std::vector<MAP_OBJECT> mOwnQueens;
-	std::vector<Step> mDesiredPositions;
+	std::vector<Step> mDesiredTumorPositions;
+	std::vector<Step> mDesiredQueenPositions;
+	std::vector<int> mSpawnGoodness;
 
 	std::vector<POS> mTumorCreepShape;
 
@@ -30,10 +32,13 @@ struct DumbAreaStrategy : public IAreaStrategy
 				if ((i*i + j*j) <= limit*limit)
 					mTumorCreepShape.push_back(POS(j, i));
 		std::sort(mTumorCreepShape.begin(), mTumorCreepShape.end(), [](const POS& l, const POS& r) { return (l.x + l.y) > (r.x + r.y); });
+		mSpawnGoodness.resize(mParser.w*mParser.h);
 	}
 	void Update();
 
 	/* INTERFACE */
 	virtual void Process() override;
-	virtual std::vector<Step> GetStepOffers() override;
+	virtual std::vector<Step> GetTumorSteps() override;
+	virtual std::vector<Step> GetQueenSteps() override;
+	virtual FuzzyState GetState() override;
 };

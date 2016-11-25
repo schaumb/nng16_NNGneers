@@ -26,7 +26,7 @@ void MYCLIENT::Process()
 
     strategy->Process();
     
-    auto&& pos = strategy->GetStepOffers();
+    auto&& pos = strategy->GetTumorSteps();
     std::cout << "Pos size: " << pos.size() << std::endl;
     
     for(auto& tumor : mParser.CreepTumors) {
