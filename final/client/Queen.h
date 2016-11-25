@@ -230,13 +230,13 @@ struct Queen : public MAP_OBJECT
 					}
 				}
 			}
-			else if(closestFriendToEnemy != parser.Units.end())
+			/*else if(closestFriendToEnemy != parser.Units.end())
 			{
 				//futunk védeni
 				retval.Attack.command.c = eUnitCommand::CMD_MOVE;
 				retval.Attack.command.pos = closestFriendToEnemy->pos;
 				retval.Attack.certanty = 3;
-			}
+			}*/
 		}
 
 		return retval;
