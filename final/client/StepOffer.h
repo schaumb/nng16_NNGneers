@@ -1,5 +1,6 @@
-#pragma onc
+#pragma once
 #include "Step.h" 
+
 struct StepOffer
 {
 	Step Build;

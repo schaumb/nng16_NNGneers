@@ -4,7 +4,7 @@ struct Step
 {
 	//min 1, max 10
 	int certanty = 1;
-	eUnitCommand command;
+	CMD command;
 	Step();
 	~Step();
 };
