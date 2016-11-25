@@ -20,7 +20,7 @@ void MYCLIENT::Process()
     }
     
     for(auto& queen : mParser.Units) if(queen.side == 0) {
-        myQueens.emplace(queen.id, Queen(queen, *this));
+        myQueens.emplace(queen.id, Queen(queen, *this, strategy.get()));
     }
 
 

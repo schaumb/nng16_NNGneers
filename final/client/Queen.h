@@ -7,15 +7,18 @@
 #include "distcache.h"
 #include "fleepath.h"
 #include "Client.h"
+#include "IAreaStrategy.h"
+#include <utility>
 
 struct Queen : public MAP_OBJECT
 {
-	Queen(MAP_OBJECT& me, CLIENT& client) :
+	Queen(MAP_OBJECT& me, CLIENT& client, IAreaStrategy* AStrategy) :
 		MAP_OBJECT{ me },
 		parser{ client.mParser },
 		mDistCache{ client.mDistCache },
 		mDebugLog{ client.mDebugLog },
-		mFleePath{ client.mFleePath }
+		mFleePath{ client.mFleePath },
+		AreaStrategy {AStrategy}
 	{}
 
 
@@ -23,6 +26,7 @@ struct Queen : public MAP_OBJECT
 	DISTCACHE& mDistCache;
 	std::ofstream& mDebugLog;
 	FLEEPATH& mFleePath;
+	IAreaStrategy* AreaStrategy;
 	// akit követek
 	int enemyID = -1;
 
@@ -51,9 +55,44 @@ struct Queen : public MAP_OBJECT
 		return Hits_to_die(current) + distDiff > Hits_to_die(other);
 	}
 
-	inline bool canBuild()
-	{//todo tumorra nem!peti fv
-		mFleePath.GetDistToFriendlyCreep(pos) <= 1 && energy >= QUEEN_BUILD_CREEP_TUMOR_COST;
+	inline std::pair<bool,POS> canBuild()
+	{
+		if (!(mFleePath.GetDistToFriendlyCreep(pos) <= 1) || energy < QUEEN_BUILD_CREEP_TUMOR_COST) { return std::make_pair(false, pos); }
+		POS bestpos; 
+		int bestgoodness = 0;
+		int goodness = AreaStrategy->GetSpawnGoodness(pos.x, pos.y);
+		if (goodness> bestgoodness)
+		{
+			goodness = bestgoodness;
+			bestpos = POS(pos.x, pos.y);
+		}
+		goodness = AreaStrategy->GetSpawnGoodness(pos.x-1, pos.y);
+		if (goodness> bestgoodness)
+		{
+			goodness = bestgoodness;
+			bestpos = POS(pos.x-1, pos.y);
+		}
+		goodness = AreaStrategy->GetSpawnGoodness(pos.x, pos.y-1);
+		if (goodness> bestgoodness)
+		{
+			goodness = bestgoodness;
+			bestpos = POS(pos.x, pos.y-1);
+		}
+		goodness = AreaStrategy->GetSpawnGoodness(pos.x+1, pos.y);
+		if (goodness> bestgoodness)
+		{
+			goodness = bestgoodness;
+			bestpos = POS(pos.x+1, pos.y);
+		}
+		goodness = AreaStrategy->GetSpawnGoodness(pos.x, pos.y+1);
+		if (goodness> bestgoodness)
+		{
+			goodness = bestgoodness;
+			bestpos = POS(pos.x, pos.y+1);
+		}
+
+		if (bestgoodness < 0) { return std::make_pair(false, pos); }
+		else { return std::make_pair(true, bestpos); }
 	}
 	StepOffer CalcOffer()
 	{
@@ -71,11 +110,19 @@ struct Queen : public MAP_OBJECT
 
 		//attack
 		//in hits
-		int ourArmyHP, enemyArmyHP;
+		int ourArmyHP=0, enemyArmyHP=0, closestEnemyDistance=10000;
 		std::vector<MAP_OBJECT>::iterator opponent;
+		std::vector<MAP_OBJECT>::iterator closestEnemy;
+
 		for (auto unit = parser.Units.begin(); unit != parser.Units.end(); ++unit)
 		{
 			auto dist = mDistCache.GetDist(pos, unit->pos);
+			if (unit->side != 0 && closestEnemyDistance> dist)
+			{
+				closestEnemyDistance = dist;
+				closestEnemy = unit;
+			}
+
 			if (dist < 5)
 			{
 				if (unit->side == 0)
@@ -96,25 +143,99 @@ struct Queen : public MAP_OBJECT
 				}
 			}
 		}
+
 		int actualcreep = 0;
-
-		//pánikszerûen építkezni kezdünk mert ölnek
-		if (canBuild() && ceil((float)Hits_to_die(*this) / (retval.EnemysInHitRange)) <= floor((float)energy/QUEEN_BUILD_CREEP_TUMOR_COST) )
+		if (opponent != parser.Units.end())
 		{
-			retval.Build.command.pos = pos;
-			retval.Build.certanty = 10;
-		}
-		//ütik a hatcheryt, erõsebbek vagyunk, feláldozom magam(mert lesz másik)
-		else if (opponent != parser.Units.end() && 
-				(	mDistCache.GetDist(parser.OwnHatchery.pos, opponent->pos) < 3
+			//pánikszerûen építkezni kezdünk mert ölnek
+			auto buildpos = canBuild();
+			if (buildpos.first && ceil((float)Hits_to_die(*this) / (retval.EnemysInHitRange)) <= floor((float)energy / QUEEN_BUILD_CREEP_TUMOR_COST))
+			{
+				retval.Build.command.pos = buildpos.second;
+				retval.Build.certanty = 10;
+			}
+			//ütik a hatcheryt, erõsebbek vagyunk, feláldozom magam(mert lesz másik)
+			else if (mDistCache.GetDist(parser.OwnHatchery.pos, opponent->pos) < 3
 				|| ourArmyHP >= enemyArmyHP
-				||	parser.OwnHatchery.energy >= HATCHERY_BUILD_QUEEN_COST + (3 * actualcreep + 50) / 4 ))
-		{	
-			retval.Attack.command.c = eUnitCommand::CMD_ATTACK;
-			retval.Attack.certanty = 10;
-			retval.Attack.command.target_id = enemyID;
-		}
+				|| parser.OwnHatchery.energy >= HATCHERY_BUILD_QUEEN_COST + (3 * actualcreep + 50) / 4)
+			{
+				retval.Attack.command.c = eUnitCommand::CMD_ATTACK;
+				retval.Attack.certanty = 10;
+				retval.Attack.command.target_id = enemyID;
+			}
+			//hátrálunk
+			else
+			{
+				retval.Attack.command.c = eUnitCommand::CMD_MOVE;
+				retval.Attack.certanty = 10;
+				retval.Attack.command.pos = parser.OwnHatchery.pos;
 
+			}
+		}
+		//épületet akarunk ölni!
+		else 
+		{
+			std::vector<MAP_OBJECT>::iterator closestFriendlyBuilding, closestEnemyBuilding, closestFriendToEnemy;
+			int minEnemyBuildingRange = 10000, minFriendBuildingRange = 10000, minFriendToEnemy=10000, minEnemyToEnemy=1000;
+			for (auto building = parser.CreepTumors.begin(); building!= parser.CreepTumors.end(); ++building)
+			{
+				auto dist = mDistCache.GetDist(building->pos, pos);
+				auto enemydist = mDistCache.GetDist(building->pos, closestEnemy->pos);
+				if (building->side == 0 && dist < minFriendBuildingRange)
+				{
+					minFriendBuildingRange = dist;
+					closestFriendlyBuilding = building;
+				}
+				if (building->side != 0 && dist < minEnemyBuildingRange)
+				{
+					minEnemyBuildingRange = dist;
+					closestEnemyBuilding = building;
+					if (enemydist < minEnemyToEnemy)
+					{
+						minFriendToEnemy = enemydist;
+					}
+				}
+				if (building->side == 0 && enemydist < minFriendToEnemy)
+				{
+					minFriendToEnemy = enemydist;
+					closestFriendToEnemy = building;
+				}
+
+			}
+
+			if (minEnemyBuildingRange < minFriendToEnemy)
+			{
+				//támadunk
+				if (parser.OwnHatchery.energy >= HATCHERY_BUILD_QUEEN_COST || closestEnemyBuilding->hp / QUEEN_DAMAGE + minEnemyBuildingRange < minEnemyToEnemy)
+				{
+					retval.Attack.certanty = 5;
+					retval.Attack.command.c = eUnitCommand::CMD_ATTACK;
+					retval.Attack.command.target_id = closestEnemyBuilding->id;
+				}
+				//kolbászolunk a határon
+				else
+				{
+					retval.Attack.certanty = 2;
+					if (myCell == eGroundType::CREEP)
+					{
+						retval.Attack.command.c = eUnitCommand::CMD_MOVE;
+						retval.Attack.command.pos = closestEnemyBuilding->pos;
+					}
+					else
+					{
+						retval.Attack.command.c = eUnitCommand::CMD_MOVE;
+						retval.Attack.command.pos = closestFriendToEnemy->pos;
+					}
+				}
+			}
+			else 
+			{
+				//futunk védeni
+				retval.Attack.command.c = eUnitCommand::CMD_MOVE;
+				retval.Attack.command.pos = closestFriendToEnemy->pos;
+				retval.Attack.certanty = 9;
+			}
+		}
 
 		return retval;
 	}
