@@ -80,7 +80,7 @@ void DumbAreaStrategy::Process()
 				else if (g == eGroundType::CREEP_CANDIDATE_FRIENDLY || g == eGroundType::CREEP_CANDIDATE_BOTH)
 					area += 1;
 			}
-			if (maxarea < area && area > 50)
+			if (maxarea < area && area > 10)
 			{
 				maxarea = area;
 				BestPos = currPos;
@@ -89,12 +89,19 @@ void DumbAreaStrategy::Process()
 		if (BestPos.IsValid())
 		{
 			Step s;
-			s.certanty = std::max(1,maxarea/200);
+			s.certanty = std::max(1,maxarea/25);
 			s.command.c = eUnitCommand::CMD_SPAWN;
 			s.command.pos = BestPos;
 			s.command.target_id = t.id;
 			if(s.certanty>0)
 				mDesiredPositions.push_back(s);
+		}
+	}
+	for (int i = 0; i < mParser.h; ++i)
+	{
+		for (int j = 0; j < mParser.w; ++j)
+		{
+			
 		}
 	}
 	std::sort(mDesiredPositions.begin(), mDesiredPositions.end(), [](const Step& l, const Step& r) {return l.certanty > r.certanty; });

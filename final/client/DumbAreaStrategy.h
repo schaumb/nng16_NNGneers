@@ -24,9 +24,10 @@ struct DumbAreaStrategy : public IAreaStrategy
 		, mDistCache(theClient.mDistCache)
 		, mOwnTumors(), mEnemyTumors(), mEnemyQueens()
 	{
-		for (int i = 9; i-- > -9;)
-			for (int j = 9; j-- > -9;)
-				if ((i*i + j*j) <= 400)
+		const double limit = 9.5;
+		for (int i = limit; i-- > -limit;)
+			for (int j = limit; j-- > -limit;)
+				if ((i*i + j*j) <= limit*limit)
 					mTumorCreepShape.push_back(POS(j, i));
 		std::sort(mTumorCreepShape.begin(), mTumorCreepShape.end(), [](const POS& l, const POS& r) { return (l.x + l.y) > (r.x + r.y); });
 	}

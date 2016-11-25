@@ -30,9 +30,11 @@ void MYCLIENT::Process()
     std::cout << "Pos size: " << pos.size() << std::endl;
     
     for(auto& tumor : mParser.CreepTumors) {
-        for(auto itRec = pos.begin(), itRec != pos.end();) {
-            if(itRec->command.target_id == tumor.id) {
-                mUnitTarget[tumor.id] = itRec->command;
+		for (auto itRec = pos.begin(); itRec != pos.end(); ++itRec) {
+            if(itRec->command.target_id == tumor.id && tumor.energy >= CREEP_TUMOR_SPAWN_ENERGY) {
+				command_buffer << "creep_tumor_spawn " << tumor.id << " " << itRec->command.pos.x << " " << itRec->command.pos.y << std::endl;
+                //mUnitTarget[tumor.id] = itRec->command;
+				std::cout << "tumor " << tumor.pos.x << " " << tumor.pos.y << "->" << itRec->command.pos.x << " " << itRec->command.pos.y << std::endl;
                 pos.erase(itRec);
                 break;
             }
@@ -44,7 +46,7 @@ void MYCLIENT::Process()
         if(i >= pos.size()) break;
         if(queen.energy >= QUEEN_BUILD_CREEP_TUMOR_COST) {
             mUnitTarget[queen.id] = pos[i].command;
-			std::cout << "goto " << pos[i].command.pos.x << " " << pos[i].command.pos.y << std::endl;
+			std::cout << "queen " << pos[i].command.pos.x << " " << pos[i].command.pos.y << std::endl;
             ++i;
         }
     }
