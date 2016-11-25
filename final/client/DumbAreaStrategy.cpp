@@ -21,7 +21,10 @@ void DumbAreaStrategy::Update()
 	for (const auto& t : mParser.CreepTumors)
 	{
 		if (t.side == OWN)
+		{
 			mOwnTumors.push_back(t);
+			mSpawnGoodness[t.pos.y*mParser.w + t.pos.x] = -1;
+		}
 		else
 			mEnemyTumors.push_back(t);
 	}
@@ -136,7 +139,8 @@ void DumbAreaStrategy::Process()
 	{
 		for (int j = 0; j < mParser.w; ++j)
 		{
-			mSpawnGoodness[i*mParser.w + j] = 0;
+			if (mSpawnGoodness[i*mParser.w + j] > -1)
+				mSpawnGoodness[i*mParser.w + j] = 0;
 			int area = 0;
 			POS currPos(j, i);
 			if (mParser.GetAt(currPos) != eGroundType::CREEP)
@@ -170,7 +174,8 @@ void DumbAreaStrategy::Process()
 					s.command.pos = currPos;
 					s.command.target_id = 0;
 					queenStep.push_back(s);
-					mSpawnGoodness[i*mParser.w + j] = area;
+					if (mSpawnGoodness[i*mParser.w + j] > -1)
+						mSpawnGoodness[i*mParser.w + j] = area;
 				}
 			}
 		}
