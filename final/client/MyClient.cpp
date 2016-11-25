@@ -10,7 +10,7 @@ MYCLIENT::MYCLIENT()
 void MYCLIENT::Process()
 {
     // rm dead queens
-    for(auto it = myQueens.begin(); it != myQueens.end(); ++it) {
+    for(auto it = myQueens.begin(); it != myQueens.end();) {
         int id = it->first;
         if(std::all_of(mParser.Units.begin(), mParser.Units.end(), [&id](const MAP_OBJECT& o) { return o.id != id; })) {
             it = myQueens.erase(it);
@@ -33,6 +33,7 @@ void MYCLIENT::Process()
         if(i >= pos.size()) break;
         if(queen.energy >= QUEEN_BUILD_CREEP_TUMOR_COST) {
             mUnitTarget[queen.id] = pos[i].command;
+			std::cout << "goto " << pos[i].command.pos.x << " " << pos[i].command.pos.y << std::endl;
             ++i;
         }
     }
