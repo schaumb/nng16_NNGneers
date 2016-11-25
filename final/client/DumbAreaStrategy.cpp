@@ -53,7 +53,7 @@ void DumbAreaStrategy::Process()
 			s.command.c = eUnitCommand::CMD_ATTACK;
 			s.command.pos = q.pos;
 			s.command.target_id = q.id;
-			mDesiredQueenPositions.push_back(s);
+			mAttackQueenPositions.push_back(s);
 			break;
 		}
 		switch (mParser.GetAt(q.pos))
@@ -66,7 +66,7 @@ void DumbAreaStrategy::Process()
 			s.command.c = eUnitCommand::CMD_ATTACK;
 			s.command.pos = q.pos;
 			s.command.target_id = q.id;
-			mDesiredQueenPositions.push_back(s);
+			mAttackQueenPositions.push_back(s);
 		}	break;
 		case eGroundType::CREEP_CANDIDATE_FRIENDLY:
 		{
@@ -76,7 +76,7 @@ void DumbAreaStrategy::Process()
 			s.command.c = eUnitCommand::CMD_ATTACK;
 			s.command.pos = q.pos;
 			s.command.target_id = q.id;
-			mDesiredQueenPositions.push_back(s);
+			mAttackQueenPositions.push_back(s);
 		}	break;
 		case eGroundType::CREEP_CANDIDATE_BOTH:
 		{
@@ -85,7 +85,7 @@ void DumbAreaStrategy::Process()
 			s.command.c = eUnitCommand::CMD_ATTACK;
 			s.command.pos = q.pos;
 			s.command.target_id = q.id;
-			mDesiredQueenPositions.push_back(s);
+			mAttackQueenPositions.push_back(s);
 			mState.Attacked = std::min(mState.Attacked, 8.0);
 		}	break;
 		default:
@@ -183,7 +183,6 @@ void DumbAreaStrategy::Process()
 	std::sort(queenStep.begin(), queenStep.end(), [](const Step& l, const Step& r) {return l.certanty > r.certanty; });
 	int cmdbuffsize = std::min((int)queenStep.size(), 10);
 	mDesiredQueenPositions.insert(mDesiredQueenPositions.begin(), queenStep.begin(), queenStep.begin() + cmdbuffsize);
-	std::stable_sort(mDesiredQueenPositions.begin(), mDesiredQueenPositions.end(), [](const Step& l, const Step& r) {return l.certanty > r.certanty; });
 }
 
 std::vector<Step> DumbAreaStrategy::GetTumorSteps()
@@ -194,6 +193,11 @@ std::vector<Step> DumbAreaStrategy::GetTumorSteps()
 std::vector<Step> DumbAreaStrategy::GetQueenSteps()
 {
 	return mDesiredQueenPositions;
+}
+
+std::vector<Step> DumbAreaStrategy::GetQueenAttacks()
+{
+	return mAttackQueenPositions;
 }
 
 FuzzyState DumbAreaStrategy::GetState()

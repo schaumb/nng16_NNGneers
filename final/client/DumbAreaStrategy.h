@@ -15,6 +15,7 @@ struct DumbAreaStrategy : public IAreaStrategy
 	std::vector<MAP_OBJECT> mOwnQueens;
 	std::vector<Step> mDesiredTumorPositions;
 	std::vector<Step> mDesiredQueenPositions;
+	std::vector<Step> mAttackQueenPositions;
 	std::vector<int> mSpawnGoodness;
 
 	std::vector<POS> mTumorCreepShape;
@@ -39,6 +40,7 @@ struct DumbAreaStrategy : public IAreaStrategy
 	virtual void Process() override;
 	virtual std::vector<Step> GetTumorSteps() override;
 	virtual std::vector<Step> GetQueenSteps() override;
+	virtual std::vector<Step> GetQueenAttacks() override;
 	virtual FuzzyState GetState() override;
 	virtual int GetSpawnGoodness(int x, int y) override;
 };
