@@ -8,6 +8,7 @@ struct DumbAreaStrategy : public IAreaStrategy
 {
 	PARSER& mParser;
 	DISTCACHE& mDistCache;
+	FLEEPATH& mFleePath;
 	std::vector<MAP_OBJECT> mOwnTumors;
 	std::vector<MAP_OBJECT> mEnemyTumors;
 	std::vector<MAP_OBJECT> mEnemyQueens;
@@ -15,6 +16,7 @@ struct DumbAreaStrategy : public IAreaStrategy
 	std::vector<MAP_OBJECT> mOwnQueens;
 	std::vector<Step> mDesiredTumorPositions;
 	std::vector<Step> mDesiredQueenPositions;
+	std::vector<Step> mAttackQueenPositions;
 	std::vector<int> mSpawnGoodness;
 
 	std::vector<POS> mTumorCreepShape;
@@ -24,6 +26,7 @@ struct DumbAreaStrategy : public IAreaStrategy
 	DumbAreaStrategy(CLIENT& theClient)
 		: mParser(theClient.mParser)
 		, mDistCache(theClient.mDistCache)
+		, mFleePath(theClient.mFleePath)
 		, mOwnTumors(), mEnemyTumors(), mEnemyQueens()
 	{
 		const double limit = 9.5;
@@ -39,6 +42,7 @@ struct DumbAreaStrategy : public IAreaStrategy
 	virtual void Process() override;
 	virtual std::vector<Step> GetTumorSteps() override;
 	virtual std::vector<Step> GetQueenSteps() override;
+	virtual std::vector<Step> GetQueenAttacks() override;
 	virtual FuzzyState GetState() override;
 	virtual int GetSpawnGoodness(int x, int y) override;
 };
