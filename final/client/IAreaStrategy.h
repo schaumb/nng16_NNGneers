@@ -5,9 +5,9 @@
 
 struct FuzzyState
 {
-	float Aggressivity;
-	float Attacked;
-	float Expanding;
+	double Aggressivity;
+	double Attacked;
+	double Expanding;
 };
 
 struct IAreaStrategy

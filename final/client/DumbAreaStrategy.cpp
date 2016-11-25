@@ -48,13 +48,13 @@ void DumbAreaStrategy::Process()
 		switch (mParser.GetAt(q.pos))
 		{
 		case eGroundType::CREEP:
-			mState.Attacked = min(mState.Attacked, 10.0);
+			mState.Attacked = std::min(mState.Attacked, 10.0);
 			break;
 		case eGroundType::CREEP_CANDIDATE_FRIENDLY:
-			mState.Attacked = min(mState.Attacked, 5.0);
+			mState.Attacked = std::min(mState.Attacked, 5.0);
 			break;
 		case eGroundType::CREEP_CANDIDATE_BOTH:
-			mState.Attacked = min(mState.Attacked, 8.0);
+			mState.Attacked = std::min(mState.Attacked, 8.0);
 			break;
 		default:
 			break;
@@ -62,8 +62,6 @@ void DumbAreaStrategy::Process()
 	}
 	for (const auto& t : mOwnTumors)
 	{
-		if (t.energy < CREEP_TUMOR_SPAWN_ENERGY)
-			continue;
 		int minDist = INT_MAX;
 		POS BestPos(0,0);
 		for (int i = 10; i-- > -9;)
@@ -72,7 +70,7 @@ void DumbAreaStrategy::Process()
 			{
 				POS currPos(t.pos.x + j, t.pos.y + i);
 				int dist = mDistCache.GetDist(currPos, mParser.EnemyHatchery.pos);
-				if (minDist > dist)
+				if (minDist > dist && mParser.GetAt(currPos) == eGroundType::CREEP)
 				{
 					minDist = dist;
 					BestPos = currPos;
