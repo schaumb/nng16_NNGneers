@@ -136,10 +136,10 @@ struct Queen : public MAP_OBJECT
 						retval.EnemysInHitRange++;
 					}
 					enemyArmyHP += Hits_to_die(*unit);
-				}
-				if (opponent == parser.Units.end() || changeOpponent(*opponent, *unit, dist))
-				{
-					opponent = unit;
+					if (opponent == parser.Units.end() || changeOpponent(*opponent, *unit, dist))
+					{
+						opponent = unit;
+					}
 				}
 			}
 		}
@@ -175,7 +175,7 @@ struct Queen : public MAP_OBJECT
 		//épületet akarunk ölni!
 		else 
 		{
-			std::vector<MAP_OBJECT>::iterator closestFriendlyBuilding, closestEnemyBuilding, closestFriendToEnemy;
+			std::vector<MAP_OBJECT>::iterator closestFriendlyBuilding, closestEnemyBuilding, closestFriendToEnemy= parser.Units.end();
 			int minEnemyBuildingRange = 10000, minFriendBuildingRange = 10000, minFriendToEnemy=10000, minEnemyToEnemy=1000;
 			for (auto building = parser.CreepTumors.begin(); building!= parser.CreepTumors.end(); ++building)
 			{
@@ -192,7 +192,7 @@ struct Queen : public MAP_OBJECT
 					closestEnemyBuilding = building;
 					if (enemydist < minEnemyToEnemy)
 					{
-						minFriendToEnemy = enemydist;
+						minEnemyToEnemy = enemydist;
 					}
 				}
 				if (building->side == 0 && enemydist < minFriendToEnemy)
@@ -228,13 +228,13 @@ struct Queen : public MAP_OBJECT
 					}
 				}
 			}
-			else 
+/*			else if(closestFriendToEnemy != parser.Units.end())
 			{
 				//futunk védeni
 				retval.Attack.command.c = eUnitCommand::CMD_MOVE;
 				retval.Attack.command.pos = closestFriendToEnemy->pos;
 				retval.Attack.certanty = 9;
-			}
+			}*/
 		}
 
 		return retval;
