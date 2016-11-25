@@ -16,23 +16,13 @@ static const int MAX_QUEENS = 8;
 static const int HATCHERY_SIZE = 3;
 static const int MAX_TICK = 1200;
 #include "MAP_OBJECT.h"
+#include "eGroundType.h"
 
-class PARSER
+struct PARSER
 {
-public:
 	PARSER();
 	int tick;
 	int versus[2]; // your ID and enemy ID. versus[1]==0 if not real opponent (test)
-	enum eGroundType
-	{
-		EMPTY,
-		WALL,
-		CREEP,
-		CREEP_CANDIDATE_FRIENDLY,
-		CREEP_CANDIDATE_ENEMY,
-		CREEP_CANDIDATE_BOTH,
-		ENEMY_CREEP
-	};
 	int w, h;
 	std::vector<eGroundType> Arena;
 	std::vector<MAP_OBJECT> Units;
@@ -40,7 +30,7 @@ public:
 	MAP_OBJECT EnemyHatchery;
 	std::vector<MAP_OBJECT> CreepTumors;
 
-	eGroundType GetAt(const POS &p) const { return p.x<w && p.y<h?Arena[p.x+p.y*w]:WALL; }
+	eGroundType GetAt(const POS &p) const { return p.x<w && p.y<h ? Arena[p.x + p.y*w] : eGroundType::WALL; }
 	void ParseUnits(const std::vector<std::string> &ServerResponse, int &index, int count, std::vector<MAP_OBJECT> &container);
 	enum eMatchResult {
 		ONGOING,

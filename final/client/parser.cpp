@@ -41,14 +41,14 @@ void PARSER::Parse(const std::vector<std::string> &ServerResponse)
 				for(int x=0;x<w;x++)
 				{
 					int c=line[x];
-					eGroundType t = EMPTY;
-					if (c=='#') t = WALL;
-					else if (c=='+') t = CREEP;
-					else if (c=='.') t = CREEP_CANDIDATE_FRIENDLY;
-					else if (c==',') t = CREEP_CANDIDATE_ENEMY;
-					else if (c==';') t = CREEP_CANDIDATE_BOTH;
-					else if (c=='x') t = ENEMY_CREEP;
-					else t = EMPTY;
+					eGroundType t = eGroundType::EMPTY;
+					if (c == '#') t = eGroundType::WALL;
+					else if (c == '+') t = eGroundType::CREEP;
+					else if (c == '.') t = eGroundType::CREEP_CANDIDATE_FRIENDLY;
+					else if (c == ',') t = eGroundType::CREEP_CANDIDATE_ENEMY;
+					else if (c == ';') t = eGroundType::CREEP_CANDIDATE_BOTH;
+					else if (c == 'x') t = eGroundType::ENEMY_CREEP;
+					else t = eGroundType::EMPTY;
 					Arena[x + w*r] = t;
 				}
 			}

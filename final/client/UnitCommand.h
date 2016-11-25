@@ -1,7 +1,7 @@
 #pragma once
 #include "parser.h"
 
-enum eUnitCommand {
+enum class eUnitCommand {
 	CMD_MOVE,
 	CMD_ATTACK,
 	CMD_SPAWN

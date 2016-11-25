@@ -1,0 +1,12 @@
+#pragma once
+
+enum class eGroundType
+{
+	EMPTY,
+	WALL,
+	CREEP,
+	CREEP_CANDIDATE_FRIENDLY,
+	CREEP_CANDIDATE_ENEMY,
+	CREEP_CANDIDATE_BOTH,
+	ENEMY_CREEP
+};

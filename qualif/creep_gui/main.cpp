@@ -41,7 +41,7 @@ int main(int argc, char ** argv)
     }
     
     sf::Font font;
-    if (!font.loadFromFile("arial.ttf"))
+	if (!font.loadFromFile("C:/Windows/Fonts/arial.ttf"))
     {
         std::cerr << "No arial font" << std::endl;
         return 1;

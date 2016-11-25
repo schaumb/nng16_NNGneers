@@ -103,7 +103,7 @@ void DISTCACHE::CreateFromParser(PARSER &Parser)
 	int x, y;
 	for(y=0;y<map_dy;y++)
 		for(x=0;x<map_dx;x++)
-			mMap[x+y*map_dx] = Parser.GetAt(POS(x, y))==PARSER::WALL?0:1;
+			mMap[x + y*map_dx] = Parser.GetAt(POS(x, y)) == eGroundType::WALL ? 0 : 1;
 	for(y=0;y<map_dy;y++)
 		for(x=0;x<map_dx;x++)
 			if (mMap[x+y*map_dx])
