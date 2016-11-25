@@ -41,11 +41,58 @@ void MYCLIENT::Process()
         }
     }
     
-    for(Step step : strategy->GetQueenSteps()) {
-        mUnitTarget[step.command.target_id] = step.command;
+    // (1)
+    for(auto& queen : myQueens) {
+        auto&& asd = queen.second.CalcOffer();
+        if(asd.Attack.certanty == 10) {
+            mUnitTarget[queen.first] = asd.Attack.command;
+            std::cout << "Unit " << queen.first << " self choose attack to: " << asd.Attack.command.pos << std::endl;
+            continue;
+        }
+        if(asd.Build.certanty == 10) {
+            mUnitTarget[queen.first] = asd.Build.command;
+            std::cout << "Unit " << queen.first << " self choose build to: " << asd.Build.command.pos << std::endl;
+            continue;
+        }
     }
-    for(auto& queen : myQueens) if(queen.second.side == 0) {
-        // TODO
+    std::vector<Step> commands =  strategy->GetQueenAttacks();
+    std::vector<Step> steps = strategy->GetQueenSteps();
+    commands.insert(commands.begin(), steps.begin(), steps.end());
+    
+    std::stable_sort(commands.begin(), commands.end(), [](const Step& s1, const Step& s2) { return s1.certanty > s2.certanty; });
+    
+    // (2)
+    for(Step st : commands) {
+        auto minIt = myQueens.end();
+        int minDistance = 80;
+        int i = 0;
+        for(auto it = myQueens.begin(); it != myQueens.end(); ++it) {
+            if(mUnitTarget.count(it->first)) continue;
+            
+            int dist  = mDistCache.GetDist(st.command.pos, it->second.pos);
+            if(dist < minDistance) {
+                dist = minDistance;
+                minIt = it;
+            }
+            ++i;
+        }
+        if(minIt == myQueens.end()) {
+            std::cout << "No one can do this recommended step from strategy" << std::endl;
+            continue;
+        }
+        std::cout << "Unit " << minIt->first << " applied for this job!" << std::endl;
+        
+        mUnitTarget[minIt->first] = st.command;
+    }
+    
+    // (3) - (4)
+    for(auto& queen : myQueens) if(!mUnitTarget.count(queen.first)) {
+        auto&& asd = queen.second.CalcOffer();
+        if(asd.Attack.certanty > asd.Build.certanty) {
+            mUnitTarget[queen.first] = asd.Attack.command;
+        } else {
+            mUnitTarget[queen.first] = asd.Attack.command;
+        }
     }
 }
 

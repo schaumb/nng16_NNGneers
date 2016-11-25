@@ -53,7 +53,7 @@ struct Queen : public MAP_OBJECT
 
 	inline bool canBuild()
 	{//todo tumorra nem!peti fv
-		mFleePath.GetDistToFriendlyCreep(pos) <= 1 && energy >= QUEEN_BUILD_CREEP_TUMOR_COST;
+		return mFleePath.GetDistToFriendlyCreep(pos) <= 1 && energy >= QUEEN_BUILD_CREEP_TUMOR_COST;
 	}
 	StepOffer CalcOffer()
 	{
