@@ -175,7 +175,7 @@ struct Queen : public MAP_OBJECT
 		//épületet akarunk ölni!
 		else 
 		{
-			std::vector<MAP_OBJECT>::iterator closestFriendlyBuilding, closestEnemyBuilding, closestFriendToEnemy= parser.Units.end();
+			std::vector<MAP_OBJECT>::iterator closestFriendlyBuilding, closestEnemyBuilding=parser.Units.end(), closestFriendToEnemy = parser.Units.end();
 			int minEnemyBuildingRange = 10000, minFriendBuildingRange = 10000, minFriendToEnemy=10000, minEnemyToEnemy=1000;
 			for (auto building = parser.CreepTumors.begin(); building!= parser.CreepTumors.end(); ++building)
 			{
@@ -202,11 +202,17 @@ struct Queen : public MAP_OBJECT
 				}
 
 			}
-
 			if (minEnemyBuildingRange < minFriendToEnemy)
 			{
 				//támadunk
-				if (parser.OwnHatchery.energy >= HATCHERY_BUILD_QUEEN_COST || closestEnemyBuilding->hp / QUEEN_DAMAGE + minEnemyBuildingRange < minEnemyToEnemy)
+
+				if (closestEnemyBuilding != parser.Units.end())
+				{
+					retval.Attack.certanty = 10;
+					retval.Attack.command.c = eUnitCommand::CMD_ATTACK;
+					retval.Attack.command.target_id = parser.EnemyHatchery.id;
+				}
+				else if (parser.OwnHatchery.energy >= HATCHERY_BUILD_QUEEN_COST || closestEnemyBuilding->hp / QUEEN_DAMAGE + minEnemyBuildingRange < minEnemyToEnemy)
 				{
 					retval.Attack.certanty = 5;
 					retval.Attack.command.c = eUnitCommand::CMD_ATTACK;
@@ -228,13 +234,13 @@ struct Queen : public MAP_OBJECT
 					}
 				}
 			}
-/*			else if(closestFriendToEnemy != parser.Units.end())
+			else if(closestFriendToEnemy != parser.Units.end())
 			{
 				//futunk védeni
 				retval.Attack.command.c = eUnitCommand::CMD_MOVE;
 				retval.Attack.command.pos = closestFriendToEnemy->pos;
 				retval.Attack.certanty = 9;
-			}*/
+			}
 		}
 
 		return retval;
