@@ -41,6 +41,9 @@ void MYCLIENT::Process()
         }
     }
     
+    for(Step step : strategy->GetQueenSteps()) {
+        mUnitTarget[step.command.target_id] = step.command;
+    }
     for(auto& queen : myQueens) if(queen.second.side == 0) {
         // TODO
     }

@@ -42,7 +42,7 @@ struct Queen : public MAP_OBJECT
 		{
 			HPChange += -1;
 		}
-		return std::ceilf((float)unit.hp / (float)(QUEEN_DAMAGE - HPChange));
+		return std::ceil((double)unit.hp / (double)(QUEEN_DAMAGE - HPChange));
 	}
 
 	bool changeOpponent(MAP_OBJECT& current, MAP_OBJECT& other, int OtherDist)
