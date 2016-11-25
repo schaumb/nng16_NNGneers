@@ -4,8 +4,7 @@
 enum class eUnitCommand {
 	CMD_MOVE,
 	CMD_ATTACK,
-	CMD_SPAWN,
-	CMD_DEFEND
+	CMD_SPAWN
 };
 
 struct CMD

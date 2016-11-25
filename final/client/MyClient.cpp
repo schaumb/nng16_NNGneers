@@ -41,14 +41,8 @@ void MYCLIENT::Process()
         }
     }
     
-    int i = 0;
-    for(auto& queen : mParser.Units) if(queen.side == 0) {
-        if(i >= pos.size()) break;
-        if(queen.energy >= QUEEN_BUILD_CREEP_TUMOR_COST) {
-            mUnitTarget[queen.id] = pos[i].command;
-			std::cout << "queen " << pos[i].command.pos.x << " " << pos[i].command.pos.y << std::endl;
-            ++i;
-        }
+    for(auto& queen : myQueens) if(queen.second.side == 0) {
+        // TODO
     }
 }
 
