@@ -5,7 +5,8 @@ struct StepOffer
 {
 	Step Build;
 	Step Attack;
-	Step Defend;
+	Step OnIdle;
+	int EnemysInHitRange = 0;
 	StepOffer();
 	~StepOffer();
 };

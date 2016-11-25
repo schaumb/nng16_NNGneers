@@ -51,11 +51,15 @@ struct Queen : public MAP_OBJECT
 		return Hits_to_die(current) + distDiff > Hits_to_die(other);
 	}
 
+	inline bool canBuild()
+	{//todo tumorra nem!peti fv
+		mFleePath.GetDistToFriendlyCreep(pos) <= 1 && energy >= QUEEN_BUILD_CREEP_TUMOR_COST;
+	}
 	StepOffer CalcOffer()
 	{
 		StepOffer retval;
 		const auto myCell = parser.GetAt(pos);
-
+		retval.Build.command.c = eUnitCommand::CMD_SPAWN;
 		//build
 		if (mFleePath.GetDistToFriendlyCreep(pos) <= 1 && energy >= QUEEN_BUILD_CREEP_TUMOR_COST)
 		{
@@ -80,6 +84,10 @@ struct Queen : public MAP_OBJECT
 				}
 				else
 				{
+					if (dist <= 1)
+					{
+						retval.EnemysInHitRange++;
+					}
 					enemyArmyHP += Hits_to_die(*unit);
 				}
 				if (changeOpponent(*opponent, *unit, dist))
@@ -88,11 +96,19 @@ struct Queen : public MAP_OBJECT
 				}
 			}
 		}
+		int actualcreep = 0;
+
+		//pánikszerûen építkezni kezdünk mert ölnek
+		if (canBuild() && ceil((float)Hits_to_die(*this) / (retval.EnemysInHitRange)) <= floor((float)energy/QUEEN_BUILD_CREEP_TUMOR_COST) )
+		{
+			retval.Build.command.pos = pos;
+			retval.Build.certanty = 10;
+		}
 		//ütik a hatcheryt, erõsebbek vagyunk, feláldozom magam(mert lesz másik)
-		if (opponent != parser.Units.end() && 
+		else if (opponent != parser.Units.end() && 
 				(	mDistCache.GetDist(parser.OwnHatchery.pos, opponent->pos) < 3
 				|| ourArmyHP >= enemyArmyHP
-				||	parser.OwnHatchery.energy >= HATCHERY_BUILD_QUEEN_COST))
+				||	parser.OwnHatchery.energy >= HATCHERY_BUILD_QUEEN_COST + (3 * actualcreep + 50) / 4 ))
 		{	
 			retval.Attack.command.c = eUnitCommand::CMD_ATTACK;
 			retval.Attack.certanty = 10;

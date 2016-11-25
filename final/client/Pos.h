@@ -46,4 +46,8 @@ struct POS
 		default: return POS(x - 1, y);
 		}
 	}
+	
+	friend std::ostream& operator<<(std::ostream& out, const POS& o) {
+	    return out << o.x << " " << o.y;
+	}
 };
