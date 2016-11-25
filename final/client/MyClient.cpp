@@ -47,7 +47,7 @@ void MYCLIENT::Process()
         auto&& asd = queen.second.CalcOffer();
         if(asd.Attack.certanty == 10) {
             mUnitTarget[queen.first] = asd.Attack.command;
-            std::cout << "Unit " << queen.first << " self choose attack to: " << asd.Attack.command.pos << std::endl;
+            std::cout << "Unit " << queen.first << " self choose attack to: " << asd.Attack.command.target_id << std::endl;
             continue;
         }
         if(asd.Build.certanty == 10) {
@@ -88,8 +88,11 @@ void MYCLIENT::Process()
     for(auto& queen : myQueens) if(!mUnitTarget.count(queen.first)) {
         auto&& asd = queen.second.CalcOffer();
         if(asd.Attack.certanty > asd.Build.certanty) {
+            std::cout << "Unit " << minIt->first << " self attack - or move to (id / pos) " << asd.Attack.command.target_id << " / "  << asd.Attack.command.pos << std::endl;
+        
             mUnitTarget[queen.first] = asd.Attack.command;
         } else {
+            std::cout << "Unit " << minIt->first << " self build to (id / pos) "  << asd.Attack.command.pos << std::endl;
             mUnitTarget[queen.first] = asd.Attack.command;
         }
     }
