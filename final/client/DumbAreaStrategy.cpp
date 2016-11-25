@@ -6,6 +6,8 @@
 
 void DumbAreaStrategy::Update()
 {
+	if(mSpawnGoodness.empty())
+		mSpawnGoodness.resize(mParser.w*mParser.h);
 	mOwnTumors.clear();
 	mEnemyTumors.clear();
 	mEnemyQueens.clear();
@@ -174,7 +176,8 @@ void DumbAreaStrategy::Process()
 		}
 	}
 	std::sort(queenStep.begin(), queenStep.end(), [](const Step& l, const Step& r) {return l.certanty > r.certanty; });
-	mDesiredQueenPositions.insert(mDesiredQueenPositions.begin(), queenStep.begin(), queenStep.begin() + 10);
+	int cmdbuffsize = std::min((int)queenStep.size(), 10);
+	mDesiredQueenPositions.insert(mDesiredQueenPositions.begin(), queenStep.begin(), queenStep.begin() + cmdbuffsize);
 	std::stable_sort(mDesiredQueenPositions.begin(), mDesiredQueenPositions.end(), [](const Step& l, const Step& r) {return l.certanty > r.certanty; });
 }
 

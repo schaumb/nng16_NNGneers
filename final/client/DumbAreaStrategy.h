@@ -32,7 +32,6 @@ struct DumbAreaStrategy : public IAreaStrategy
 				if ((i*i + j*j) <= limit*limit)
 					mTumorCreepShape.push_back(POS(j, i));
 		std::sort(mTumorCreepShape.begin(), mTumorCreepShape.end(), [](const POS& l, const POS& r) { return (l.x + l.y) > (r.x + r.y); });
-		mSpawnGoodness.resize(mParser.w*mParser.h);
 	}
 	void Update();
 
