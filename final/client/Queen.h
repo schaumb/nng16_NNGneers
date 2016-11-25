@@ -4,6 +4,7 @@
 #include "StepOffer.h"
 #include <sstream>
 #include <fstream>
+#include <algorithm>
 #include "distcache.h"
 #include "fleepath.h"
 
@@ -48,7 +49,7 @@ struct Queen : public MAP_OBJECT
 		if (enemyID >= 0)
 		{
 			MAP_OBJECT* enemy = nullptr;
-			std::find(parser.Units.begin(), parser.Units.end(), [&](const MAP_OBJECT& unit){ return unit.id == enemyID; });
+			std::find_if(parser.Units.begin(), parser.Units.end(), [&](const MAP_OBJECT& unit){ return unit.id == enemyID; });
 
 			if (enemy != nullptr)
 			{
