@@ -175,17 +175,13 @@ struct Queen : public MAP_OBJECT
 		//épületet akarunk ölni!
 		else 
 		{
-			std::vector<MAP_OBJECT>::iterator closestFriendlyBuilding, closestEnemyBuilding=parser.Units.end(), closestFriendToEnemy = parser.Units.end();
-			int minEnemyBuildingRange = 10000, minFriendBuildingRange = 10000, minFriendToEnemy=10000, minEnemyToEnemy=1000;
+			std::vector<MAP_OBJECT>::iterator  closestEnemyBuilding=parser.Units.end(), closestFriendToEnemy = parser.Units.end();
+			int minEnemyBuildingRange = 10000,  minFriendToEnemy=10000, minEnemyToEnemy=1000;
 			for (auto building = parser.CreepTumors.begin(); building!= parser.CreepTumors.end(); ++building)
 			{
 				auto dist = mDistCache.GetDist(building->pos, pos);
 				auto enemydist = mDistCache.GetDist(building->pos, closestEnemy->pos);
-				if (building->side == 0 && dist < minFriendBuildingRange)
-				{
-					minFriendBuildingRange = dist;
-					closestFriendlyBuilding = building;
-				}
+
 				if (building->side != 0 && dist < minEnemyBuildingRange)
 				{
 					minEnemyBuildingRange = dist;
