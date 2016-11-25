@@ -20,6 +20,20 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <netdb.h>
+#include <unistd.h>
+#include <ctime>
+#include <cstring>
+#include <climits>
+
+
+inline uint32_t GetTickCount() {
+    struct timespec ts;
+    unsigned theTick = 0U;
+    clock_gettime( CLOCK_REALTIME, &ts );
+    theTick  = ts.tv_nsec / 1000000;
+    theTick += ts.tv_sec * 1000;
+    return theTick;
+}
 #endif
 
 #include <cassert>
