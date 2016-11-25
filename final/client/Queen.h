@@ -235,7 +235,7 @@ struct Queen : public MAP_OBJECT
 				//futunk védeni
 				retval.Attack.command.c = eUnitCommand::CMD_MOVE;
 				retval.Attack.command.pos = closestFriendToEnemy->pos;
-				retval.Attack.certanty = 9;
+				retval.Attack.certanty = 3;
 			}
 		}
 
