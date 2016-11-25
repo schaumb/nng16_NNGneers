@@ -41,4 +41,5 @@ struct DumbAreaStrategy : public IAreaStrategy
 	virtual std::vector<Step> GetTumorSteps() override;
 	virtual std::vector<Step> GetQueenSteps() override;
 	virtual FuzzyState GetState() override;
+	virtual int GetSpawnGoodness(int x, int y) override;
 };
