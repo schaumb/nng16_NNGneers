@@ -41,6 +41,8 @@ void DumbAreaStrategy::Update()
 void DumbAreaStrategy::Process()
 {
 	Update();
+	int OwnCreep = 0;
+	int EnemyCreep = 0;
 	mDesiredTumorPositions.clear(); // for now
 	mDesiredQueenPositions.clear();
 	for (const auto& q : mEnemyQueens)
@@ -89,9 +91,88 @@ void DumbAreaStrategy::Process()
 			mState.Attacked = std::min(mState.Attacked, 8.0);
 		}	break;
 		default:
-			break;
+		{
+			int dist = (unsigned short)mFleePath.GetDistToFriendlyCreep(q.pos);
+			if (dist < 10)
+			{
+				int minDist = 10;
+				POS BestPos(0, 0);
+				for (auto p : mTumorCreepShape)
+				{
+					POS targetPos(q.pos.x + p.x, q.pos.y + p.y);
+					if (targetPos.x < 0 || targetPos.y < 0 || mParser.GetAt(targetPos) != eGroundType::CREEP)
+						continue;
+					if (minDist > dist)
+					{
+						minDist = dist;
+						BestPos = targetPos;
+					}
+				}
+				if (BestPos.IsValid())
+				{
+					POS BestestPos(BestPos);
+					int dx = std::min(1,std::max(-1,q.pos.x - BestPos.x));
+					int dy = std::min(1,std::max(-1,q.pos.y - BestPos.y));
+					if (mParser.GetAt(POS(BestPos.x + dx, BestestPos.y + dy)) == eGroundType::CREEP)
+						BestestPos = POS(BestPos.x + dx, BestestPos.y + dy);
+					else if (mParser.GetAt(POS(BestPos.x, BestestPos.y + dy)) == eGroundType::CREEP)
+						BestestPos = POS(BestPos.x, BestestPos.y + dy);
+					else if (mParser.GetAt(POS(BestPos.x + dx, BestestPos.y)) == eGroundType::CREEP)
+						BestestPos = POS(BestPos.x + dx, BestestPos.y);
+					Step s;
+					s.certanty = 10-dist;
+					s.command.c = eUnitCommand::CMD_MOVE;
+					s.command.pos = BestestPos;
+					s.command.target_id = q.id;
+					mAttackQueenPositions.push_back(s);
+					mState.Attacked = std::min(mState.Attacked, 3.0);
+				}
+			}
+		}	break;
 		}
 	}
+	for (const auto& t : mEnemyTumors)
+	{
+		int dist = (unsigned short)mFleePath.GetDistToFriendlyCreep(t.pos);
+		if (dist <= 10)
+		{
+			int minDist = 10;
+			POS BestPos(0, 0);
+			for (auto p : mTumorCreepShape)
+			{
+				POS targetPos(t.pos.x + p.x, t.pos.y + p.y);
+				if (targetPos.x < 0 || targetPos.y < 0 || mParser.GetAt(targetPos) != eGroundType::CREEP)
+					continue;
+				if (minDist > dist)
+				{
+					minDist = dist;
+					BestPos = targetPos;
+				}
+			}
+			if (BestPos.IsValid())
+			{
+				POS BestestPos(BestPos);
+				int dx = std::min(1, std::max(-1, t.pos.x - BestPos.x));
+				int dy = std::min(1, std::max(-1, t.pos.y - BestPos.y));
+				if (mParser.GetAt(POS(BestPos.x + dx, BestestPos.y + dy)) == eGroundType::CREEP)
+					BestestPos = POS(BestPos.x + dx, BestestPos.y + dy);
+				else if (mParser.GetAt(POS(BestPos.x, BestestPos.y + dy)) == eGroundType::CREEP)
+					BestestPos = POS(BestPos.x, BestestPos.y + dy);
+				else if (mParser.GetAt(POS(BestPos.x + dx, BestestPos.y)) == eGroundType::CREEP)
+					BestestPos = POS(BestPos.x + dx, BestestPos.y);
+				Step s;
+				s.certanty = 10-dist;
+				s.command.c = eUnitCommand::CMD_MOVE;
+				s.command.pos = BestestPos;
+				s.command.target_id = t.id;
+				mAttackQueenPositions.push_back(s);
+				mState.Attacked = std::min(mState.Attacked, 2.0);
+			}
+		}
+
+	}
+	std::stable_sort(mAttackQueenPositions.begin(), mAttackQueenPositions.end(), [](const Step& l, const Step& r) {return l.certanty > r.certanty; });
+
 	for (const auto& t : mOwnTumors)
 	{
 		int maxarea = INT_MIN;

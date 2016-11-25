@@ -8,6 +8,7 @@ struct DumbAreaStrategy : public IAreaStrategy
 {
 	PARSER& mParser;
 	DISTCACHE& mDistCache;
+	FLEEPATH& mFleePath;
 	std::vector<MAP_OBJECT> mOwnTumors;
 	std::vector<MAP_OBJECT> mEnemyTumors;
 	std::vector<MAP_OBJECT> mEnemyQueens;
@@ -25,6 +26,7 @@ struct DumbAreaStrategy : public IAreaStrategy
 	DumbAreaStrategy(CLIENT& theClient)
 		: mParser(theClient.mParser)
 		, mDistCache(theClient.mDistCache)
+		, mFleePath(theClient.mFleePath)
 		, mOwnTumors(), mEnemyTumors(), mEnemyQueens()
 	{
 		const double limit = 9.5;
