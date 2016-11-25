@@ -2,6 +2,7 @@
 
 #include "Client.h"
 #include "IAreaStrategy.h"
+#include <algorithm>
 
 struct DumbAreaStrategy : public IAreaStrategy
 {
@@ -14,13 +15,21 @@ struct DumbAreaStrategy : public IAreaStrategy
 	std::vector<MAP_OBJECT> mOwnQueens;
 	std::vector<Step> mDesiredPositions;
 
+	std::vector<POS> mTumorCreepShape;
+
 	FuzzyState mState;
 	
 	DumbAreaStrategy(CLIENT& theClient)
 		: mParser(theClient.mParser)
 		, mDistCache(theClient.mDistCache)
 		, mOwnTumors(), mEnemyTumors(), mEnemyQueens()
-	{}
+	{
+		for (int i = 9; i-- > -9;)
+			for (int j = 9; j-- > -9;)
+				if ((i*i + j*j) <= 400)
+					mTumorCreepShape.push_back(POS(j, i));
+		std::sort(mTumorCreepShape.begin(), mTumorCreepShape.end(), [](const POS& l, const POS& r) { return (l.x + l.y) > (r.x + r.y); });
+	}
 	void Update();
 
 	/* INTERFACE */

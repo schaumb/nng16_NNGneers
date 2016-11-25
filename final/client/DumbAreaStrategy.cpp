@@ -1,6 +1,5 @@
 #include "stdafx.h"
 #include "DumbAreaStrategy.h"
-#include <algorithm>
 
 #define OWN 0
 #define ENEMY 1
@@ -62,46 +61,38 @@ void DumbAreaStrategy::Process()
 	}
 	for (const auto& t : mOwnTumors)
 	{
-		int minDist = INT_MAX;
+		int maxarea = INT_MIN;
 		POS BestPos(0,0);
-		for (int i = 10; i-- > -9;)
+		for (auto cp : mTumorCreepShape)
 		{
-			for (int j = 9; j-- > -9;)
+			POS currPos(t.pos.x+cp.x, t.pos.y+cp.y);
+			if (currPos.x < 0 || currPos.y < 0 || mParser.GetAt(currPos) != eGroundType::CREEP)
+				continue;
+			int area = 0;
+			for (auto p : mTumorCreepShape)
 			{
-				POS currPos(t.pos.x + j, t.pos.y + i);
-				int dist = mDistCache.GetDist(currPos, mParser.EnemyHatchery.pos);
-				if (minDist > dist && mParser.GetAt(currPos) == eGroundType::CREEP)
-				{
-					minDist = dist;
-					BestPos = currPos;
-				}
+				POS destpos(currPos.x + p.x, currPos.y + p.y);
+				if (destpos.x < 0 || destpos.y < 0)
+					continue;
+				eGroundType g = mParser.GetAt(destpos);
+				if (g == eGroundType::EMPTY)
+					area += 2;
+				else if (g == eGroundType::CREEP_CANDIDATE_FRIENDLY || g == eGroundType::CREEP_CANDIDATE_BOTH)
+					area += 1;
+			}
+			if (maxarea < area && area > 50)
+			{
+				maxarea = area;
+				BestPos = currPos;
 			}
 		}
 		if (BestPos.IsValid())
 		{
 			Step s;
-			s.certanty = 1;
-			switch (mParser.GetAt(BestPos))
-			{
-			case eGroundType::CREEP:
-				s.certanty = 10;
-				break;
-			case eGroundType::CREEP_CANDIDATE_FRIENDLY:
-				s.certanty = 8;
-				break;
-			case eGroundType::CREEP_CANDIDATE_BOTH:
-				s.certanty = 5;
-				break;
-			case eGroundType::ENEMY_CREEP:
-			case eGroundType::WALL:
-				s.certanty = 0;
-				break;
-			default:
-				break;
-			}
+			s.certanty = std::max(1,maxarea/200);
 			s.command.c = eUnitCommand::CMD_SPAWN;
 			s.command.pos = BestPos;
-			s.command.target_id = 0;
+			s.command.target_id = t.id;
 			if(s.certanty>0)
 				mDesiredPositions.push_back(s);
 		}
