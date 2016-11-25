@@ -262,7 +262,7 @@ std::string CLIENT::HandleServerResponse(std::vector<std::string> &ServerRespons
 		ss << "tick "<<mParser.tick<<"\n";
 		Process();		
 		ss<<command_buffer.str();
-		for(std::map<int, CLIENT::CMD>::iterator it=mUnitTarget.begin();it!=mUnitTarget.end();)
+		for(std::map<int, CMD>::iterator it=mUnitTarget.begin();it!=mUnitTarget.end();)
 		{
 			bool cmd_done = false;
 
@@ -271,7 +271,7 @@ std::string CLIENT::HandleServerResponse(std::vector<std::string> &ServerRespons
 			if (q==NULL)
 			{
 				cmd_done = true;
-			} else if (it->second.c == CLIENT::CMD_MOVE)
+			} else if (it->second.c == CMD_MOVE)
 			{
 				if (q->pos==it->second.pos) cmd_done = true;
 				else
@@ -286,7 +286,7 @@ std::string CLIENT::HandleServerResponse(std::vector<std::string> &ServerRespons
 						ss<<"queen_move "<<it->first<<" "<<t.x<<" "<<t.y<<"\n";
 					}
 				}
-			} else if (it->second.c == CLIENT::CMD_SPAWN)
+			} else if (it->second.c == CMD_SPAWN)
 			{
 				bool do_spawn = false;
 				if (q->pos==it->second.pos) do_spawn = true;
@@ -305,7 +305,7 @@ std::string CLIENT::HandleServerResponse(std::vector<std::string> &ServerRespons
 					ss<<"queen_spawn "<<it->first<<" "<<it->second.pos.x<<" "<<it->second.pos.y<<"\n";
 					cmd_done = true;
 				}
-			} else if (it->second.c == CLIENT::CMD_ATTACK)
+			} else if (it->second.c == CMD_ATTACK)
 			{
 				MAP_OBJECT *t = NULL;
 				POS t_pos;
@@ -345,7 +345,7 @@ std::string CLIENT::HandleServerResponse(std::vector<std::string> &ServerRespons
 					if (do_attack) ss<<"queen_attack "<<it->first<<" "<<it->second.target_id<<"\n";
 				}
 			}
-			std::map<int, CLIENT::CMD>::iterator it2=it;
+			std::map<int, CMD>::iterator it2=it;
 			it2++;
 			if (cmd_done)
 			{

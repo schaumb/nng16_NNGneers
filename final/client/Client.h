@@ -1,7 +1,8 @@
 #pragma once
 #include "parser.h"
 #include "distcache.h"
-
+#include "UnitCommand.h"
+//#include "IqueenStategy"
 class CLIENT
 {
 public:
@@ -16,17 +17,7 @@ public:
 	PARSER mParser;	
 	std::stringstream command_buffer;
 	DISTCACHE mDistCache;
-	enum eUnitCommand {
-		CMD_MOVE,
-		CMD_ATTACK,
-		CMD_SPAWN
-	};
-	struct CMD
-	{
-		eUnitCommand c;
-		POS pos;
-		int target_id;
-	};
+
 	std::map<int, CMD> mUnitTarget;
 
 	void ParsePlayers(std::vector<std::string> &ServerResponse);
