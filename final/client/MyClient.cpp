@@ -29,7 +29,7 @@ void MYCLIENT::Process()
     if(countOfEnemyQueens < 3 && countOfMyQuens > 6) {
         int i = 0;
         for(auto& queen : mParser.Units) if(queen.side == 0) {
-            mUnitTarget[queen.second.id] = CMD{eUnitCommand::CMD_ATTACK, POS{}, mParser.EnemyHatchery.id};
+            mUnitTarget[queen.id] = CMD{eUnitCommand::CMD_ATTACK, POS{}, mParser.EnemyHatchery.id};
             if(++i == 4) {
                 break;
             }
