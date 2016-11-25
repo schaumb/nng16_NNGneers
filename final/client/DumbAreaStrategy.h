@@ -3,12 +3,6 @@
 #include "Client.h"
 #include "IAreaStrategy.h"
 
-struct FuzzyState
-{
-	float Aggressivity;
-	float Expanding;
-};
-
 struct DumbAreaStrategy : public IAreaStrategy
 {
 	PARSER& mParser;
@@ -18,13 +12,18 @@ struct DumbAreaStrategy : public IAreaStrategy
 	std::vector<MAP_OBJECT> mEnemyQueens;
 	/*remove!!!*/
 	std::vector<MAP_OBJECT> mOwnQueens;
-	std::vector<POS> mDesiredPositions;
+	std::vector<Step> mDesiredPositions;
+
+	FuzzyState mState;
 	
 	DumbAreaStrategy(CLIENT& theClient)
 		: mParser(theClient.mParser)
 		, mDistCache(theClient.mDistCache)
 		, mOwnTumors(), mEnemyTumors(), mEnemyQueens()
 	{}
-	virtual void Process() override;
 	void Update();
+
+	/* INTERFACE */
+	virtual void Process() override;
+	virtual std::vector<Step> GetStepOffers() override;
 };
