@@ -2,6 +2,7 @@
 #include "parser.h"
 #include "distcache.h"
 #include "UnitCommand.h"
+#include "fleepath.h"
 //#include "IqueenStategy"
 class CLIENT
 {
@@ -17,6 +18,7 @@ public:
 	PARSER mParser;	
 	std::stringstream command_buffer;
 	DISTCACHE mDistCache;
+	FLEEPATH mFleePath;
 
 	std::map<int, CMD> mUnitTarget;
 

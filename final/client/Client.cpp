@@ -259,6 +259,7 @@ std::string CLIENT::HandleServerResponse(std::vector<std::string> &ServerRespons
 	std::stringstream ss;
 	if (mParser.match_result==PARSER::ONGOING)
 	{
+		mFleePath.CreateCreepDist(&mParser);
 		ss << "tick "<<mParser.tick<<"\n";
 		Process();		
 		ss<<command_buffer.str();
