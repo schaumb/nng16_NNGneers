@@ -9,6 +9,21 @@ MYCLIENT::MYCLIENT()
 
 void MYCLIENT::Process()
 {
+    // rm dead queens
+    for(auto it = myQueens.begin(); it != myQueens.end(); ++it) {
+        int id = it->first;
+        if(std::all_of(mParser.Units.begin(), mParser.Units.end(), [&id](const MAP_OBJECT& o) { return o.id != id; })) {
+            it = myQueens.erase(it);
+        } else {
+            ++it;
+        }
+    }
+    
+    for(auto& queen : mParser.Units) if(queen.side == 0) {
+        myQueens.emplace(queen.id, Queen(queen, *this));
+    }
+
+
     strategy->Process();
     
     auto&& pos = strategy->GetStepOffers();

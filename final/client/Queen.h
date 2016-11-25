@@ -7,15 +7,16 @@
 #include <algorithm>
 #include "distcache.h"
 #include "fleepath.h"
+#include "Client.h"
 
 struct Queen : public MAP_OBJECT
 {
-	Queen(MAP_OBJECT& me, PARSER& parser_, DISTCACHE& mDistCache_, std::ofstream& mDebugLog_, FLEEPATH& mFleePath_) :
+	Queen(MAP_OBJECT& me, CLIENT& client) :
 		MAP_OBJECT{me},
-		parser{ parser_ },
-		mDistCache{ mDistCache_ },
-		mDebugLog{ mDebugLog_ },
-		mFleePath{ mFleePath_ }
+		parser{ client.mParser },
+		mDistCache{ client.mDistCache },
+		mDebugLog{ client.mDebugLog },
+		mFleePath{ client.mFleePath }
 	{}
 
 

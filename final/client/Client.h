@@ -36,6 +36,7 @@ public:
 
 	std::string DebugResponse(std::vector<std::string> &text) { return HandleServerResponse(text); }
 
+	std::ofstream mDebugLog;
 protected:
 	std::string HandleServerResponse(std::vector<std::string> &ServerResponse); // setup parser, call Process, handle mUnitTarget
 	void SendMessage( std::string aMessage );
@@ -46,7 +47,6 @@ protected:
 	virtual std::string GetPassword() = 0;
 	virtual std::string GetPreferredOpponents() = 0;
 	virtual bool NeedDebugLog() = 0;
-	std::ofstream mDebugLog;
 #ifdef WIN32
 	SOCKET mConnectionSocket;
 #else
