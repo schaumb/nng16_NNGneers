@@ -20,8 +20,20 @@ void MYCLIENT::Process()
         }
     }
     
-    for(auto& queen : mParser.Units) if(queen.side == 0) {
+    int countOfMyQuens = 0;
+    for(auto& queen : mParser.Units) if(queen.side == 0) { ++countOfMyQuens;
         myQueens.emplace(queen.id, Queen(queen, *this, strategy.get()));
+    }
+    
+    int countOfEnemyQueens = mParser.Units.size() - countOfMyQuens;
+    if(countOfEnemyQueens < 3 && countOfMyQuens > 6) {
+        int i = 0;
+        for(auto& queen : mParser.Units) if(queen.side == 0) {
+            mUnitTarget[queen.second.id] = CMD{eUnitCommand::CMD_ATTACK, POS{}, mParser.EnemyHatchery.id};
+            if(++i == 4) {
+                break;
+            }
+        }
     }
 
 
