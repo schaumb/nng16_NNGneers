@@ -111,8 +111,8 @@ struct Queen : public MAP_OBJECT
 		//attack
 		//in hits
 		int ourArmyHP=0, enemyArmyHP=0, closestEnemyDistance=10000;
-		std::vector<MAP_OBJECT>::iterator opponent;
-		std::vector<MAP_OBJECT>::iterator closestEnemy;
+		std::vector<MAP_OBJECT>::iterator opponent = parser.Units.end();
+		std::vector<MAP_OBJECT>::iterator closestEnemy = parser.Units.end();
 
 		for (auto unit = parser.Units.begin(); unit != parser.Units.end(); ++unit)
 		{
@@ -137,7 +137,7 @@ struct Queen : public MAP_OBJECT
 					}
 					enemyArmyHP += Hits_to_die(*unit);
 				}
-				if (changeOpponent(*opponent, *unit, dist))
+				if (opponent == parser.Units.end() || changeOpponent(*opponent, *unit, dist))
 				{
 					opponent = unit;
 				}
@@ -161,7 +161,7 @@ struct Queen : public MAP_OBJECT
 			{
 				retval.Attack.command.c = eUnitCommand::CMD_ATTACK;
 				retval.Attack.certanty = 10;
-				retval.Attack.command.target_id = enemyID;
+				retval.Attack.command.target_id = opponent->id;
 			}
 			//hátrálunk
 			else

@@ -45,6 +45,7 @@ void DumbAreaStrategy::Process()
 	int EnemyCreep = 0;
 	mDesiredTumorPositions.clear(); // for now
 	mDesiredQueenPositions.clear();
+	mAttackQueenPositions.clear();
 	for (const auto& q : mEnemyQueens)
 	{
 		if (mDistCache.GetDist(q.pos, mParser.OwnHatchery.pos) < 10)
@@ -169,7 +170,6 @@ void DumbAreaStrategy::Process()
 				mState.Attacked = std::min(mState.Attacked, 2.0);
 			}
 		}
-
 	}
 	std::stable_sort(mAttackQueenPositions.begin(), mAttackQueenPositions.end(), [](const Step& l, const Step& r) {return l.certanty > r.certanty; });
 
