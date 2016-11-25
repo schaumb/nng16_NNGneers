@@ -249,12 +249,29 @@ void DumbAreaStrategy::Process()
 				}
 				if (area > 0)
 				{
-					Step s;
-					s.certanty = std::max(1, area / 125);
-					s.command.c = eUnitCommand::CMD_SPAWN;
-					s.command.pos = currPos;
-					s.command.target_id = 0;
-					queenStep.push_back(s);
+					bool foundclose = false;
+					for(auto& st: queenStep)
+					{
+						if (mDistCache.GetDist(st.command.pos, currPos) < 10)
+						{
+							if (st.certanty < std::max(1, area / 125))
+							{
+								foundclose = true;
+								st.certanty = std::max(1, area / 125);
+								st.command.pos = currPos;
+								break;
+							}
+						}
+					}
+					if (!foundclose)
+					{
+						Step s;
+						s.certanty = std::max(1, area / 125);
+						s.command.c = eUnitCommand::CMD_SPAWN;
+						s.command.pos = currPos;
+						s.command.target_id = 0;
+						queenStep.push_back(s);
+					}
 					if (mSpawnGoodness[i*mParser.w + j] > -1)
 						mSpawnGoodness[i*mParser.w + j] = area;
 				}
