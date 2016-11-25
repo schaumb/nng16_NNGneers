@@ -30,7 +30,7 @@ void MYCLIENT::Process()
     std::cout << "Pos size: " << pos.size() << std::endl;
     
     for(auto& tumor : mParser.CreepTumors) {
-        for(auto itRec = pos.begin(), itRec != pos.end();) {
+		for (auto itRec = pos.begin(); itRec != pos.end();++itRec) {
             if(itRec->command.target_id == tumor.id) {
                 mUnitTarget[tumor.id] = itRec->command;
                 pos.erase(itRec);
