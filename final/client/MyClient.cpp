@@ -27,8 +27,19 @@ void MYCLIENT::Process()
     strategy->Process();
     
     auto&& pos = strategy->GetStepOffers();
-    int i = 0;
     std::cout << "Pos size: " << pos.size() << std::endl;
+    
+    for(auto& tumor : mParser.CreepTumors) {
+        for(auto itRec = pos.begin(), itRec != pos.end();) {
+            if(itRec->command.target_id == tumor.id) {
+                mUnitTarget[tumor.id] = itRec->command;
+                pos.erase(itRec);
+                break;
+            }
+        }
+    }
+    
+    int i = 0;
     for(auto& queen : mParser.Units) if(queen.side == 0) {
         if(i >= pos.size()) break;
         if(queen.energy >= QUEEN_BUILD_CREEP_TUMOR_COST) {
